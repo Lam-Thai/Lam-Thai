@@ -7,3 +7,5 @@
 // ip address is location of pc for servers give users(browser) -> more money to make the domain(name)
 
 // in server, node(web server) has codes run infinite (infinite loop) to serve. <-- http.createServer()
+
+// name in radio is like a variable for value
