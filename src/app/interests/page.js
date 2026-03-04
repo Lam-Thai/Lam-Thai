@@ -2,14 +2,12 @@
 
 import Image from "next/image";
 import NavBar from "../components/Nav-Bar";
-import {
-  DraggableCardBody,
-  DraggableCardContainer,
-} from "../components/ui/draggable-card";
+import { DraggableCardBody } from "../components/ui/draggable-card";
 import { useState } from "react";
 
 export default function Interests() {
-  const [activeCard, setActiveCard] = useState(null);
+  // Track the order cards were last dragged so each successive drag goes higher
+  const [dragOrder, setDragOrder] = useState([]);
 
   const interests = [
     {
@@ -44,6 +42,20 @@ export default function Interests() {
     },
   ];
 
+  const handleCardActivate = (index) => {
+    setDragOrder((prev) => [...prev.filter((i) => i !== index), index]);
+  };
+
+  const getZIndex = (index) => {
+    const orderIndex = dragOrder.indexOf(index);
+    if (orderIndex !== -1) {
+      return 100 + orderIndex;
+    }
+    const totalCards = interests.length;
+    const middleIndex = (totalCards - 1) / 2;
+    return totalCards - Math.abs(index - middleIndex);
+  };
+
   return (
     <div className="relative min-h-screen bg-black overflow-hidden">
       <NavBar />
@@ -69,67 +81,49 @@ export default function Interests() {
         {/* Stacked Draggable Photo Cards */}
         <div className="relative w-full flex items-center justify-center min-h-[600px] mb-20">
           {interests.map((interest, index) => {
-            // Calculate stacking position
             const totalCards = interests.length;
             const middleIndex = (totalCards - 1) / 2;
-            const offset = (index - middleIndex) * 20; // Horizontal offset
-            const rotation = (index - middleIndex) * 8; // Rotation angle
-
-            // Calculate base z-index
-            const baseZIndex = totalCards - Math.abs(index - middleIndex);
-
-            // If this card is being dragged, give it the highest z-index
-            const zIndex = activeCard === index ? 999 : baseZIndex;
+            const offsetX = (index - middleIndex) * 20;
+            const rotation = (index - middleIndex) * 8;
 
             return (
-              <div
+              <DraggableCardBody
                 key={index}
-                className="absolute"
-                style={{
-                  transform: `translateX(${offset}px) rotate(${rotation}deg)`,
-                  zIndex: zIndex,
-                  pointerEvents: "auto",
-                }}
+                className="group/card !p-0 overflow-hidden w-80 md:w-96 !bg-zinc-800 border border-zinc-700 cursor-grab active:cursor-grabbing"
+                initialX={offsetX}
+                initialRotation={rotation}
+                zIndex={getZIndex(index)}
+                onActivate={() => handleCardActivate(index)}
               >
-                <DraggableCardContainer>
-                  <DraggableCardBody
-                    className="group/card !p-0 overflow-hidden w-80 md:w-96 !bg-zinc-800 border border-zinc-700 cursor-grab active:cursor-grabbing"
-                    onMouseDown={() => setActiveCard(index)}
-                    onMouseUp={() => setActiveCard(null)}
-                    onTouchStart={() => setActiveCard(index)}
-                    onTouchEnd={() => setActiveCard(null)}
-                  >
-                    {/* Image with overlay */}
-                    <div className="relative w-full h-96">
-                      <Image
-                        src={interest.image}
-                        alt={interest.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover/card:scale-110 pointer-events-none select-none"
-                        draggable={false}
-                      />
+                {/* Image with overlay */}
+                <div className="relative w-full h-96">
+                  <Image
+                    src={interest.image}
+                    alt={interest.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover/card:scale-110 pointer-events-none select-none"
+                    draggable={false}
+                  />
 
-                      {/* Dark gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent pointer-events-none"></div>
+                  {/* Dark gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent pointer-events-none"></div>
 
-                      {/* Title overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-6 pointer-events-none">
-                        <h3 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
-                          {interest.title}
-                        </h3>
+                  {/* Title overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 pointer-events-none">
+                    <h3 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
+                      {interest.title}
+                    </h3>
 
-                        {/* Decorative accent line */}
-                        <div
-                          className={`mt-3 h-1 w-20 bg-gradient-to-r ${interest.gradient} rounded-full`}
-                        ></div>
-                      </div>
+                    {/* Decorative accent line */}
+                    <div
+                      className={`mt-3 h-1 w-20 bg-gradient-to-r ${interest.gradient} rounded-full`}
+                    ></div>
+                  </div>
 
-                      {/* Hover effect overlay */}
-                      <div className="absolute inset-0 bg-zinc-900/0 group-hover/card:bg-zinc-900/20 transition-colors duration-300 pointer-events-none"></div>
-                    </div>
-                  </DraggableCardBody>
-                </DraggableCardContainer>
-              </div>
+                  {/* Hover effect overlay */}
+                  <div className="absolute inset-0 bg-zinc-900/0 group-hover/card:bg-zinc-900/20 transition-colors duration-300 pointer-events-none"></div>
+                </div>
+              </DraggableCardBody>
             );
           })}
         </div>
