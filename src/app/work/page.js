@@ -136,7 +136,7 @@ export default function Work() {
         "Socket.io",
       ],
       githubUrl: "https://github.com/BB-CommandZ/BanditBreakout",
-      liveUrl: "https://github.com/BB-CommandZ/BanditBreakout",
+      liveUrl: "http://commandz.gochatus.org:30006/",
     },
     {
       id: "image-converter",

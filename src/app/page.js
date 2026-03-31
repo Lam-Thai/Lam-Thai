@@ -3,7 +3,7 @@ import NavBar from "./components/Nav-Bar";
 import { CardContainer, CardBody, CardItem } from "./components/ui/3d-card";
 import Link from "next/link";
 import AnimatedStatValue from "./components/AnimatedStatValue";
-import { TypewriterEffect } from "./components/ui/typewriter-effect";
+import { TextGenerateEffect } from "./components/ui/text-generate-effect";
 
 export default function Home() {
   return (
@@ -30,30 +30,19 @@ export default function Home() {
             </div>
 
             <div className="space-y-2">
-              <TypewriterEffect
+              <TextGenerateEffect
+                words="Tuoc Lam Thai"
+                duration={0.45}
                 className="text-left text-5xl md:text-7xl font-bold leading-tight"
-                cursorClassName="bg-white h-8 md:h-12"
-                words={[
-                  { text: "Tuoc", className: "text-white" },
-                  { text: "Lam", className: "text-white" },
-                  { text: "Thai", className: "text-white" },
-                ]}
+                textClassName="text-white"
+                wordClassName="text-white"
               />
-              <TypewriterEffect
+              <TextGenerateEffect
+                words="Web Developer"
+                duration={0.45}
                 className="text-left text-5xl md:text-7xl font-bold leading-tight"
-                cursorClassName="bg-amber-400 h-8 md:h-12"
-                words={[
-                  {
-                    text: "Web",
-                    className:
-                      "bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent dark:text-transparent",
-                  },
-                  {
-                    text: "Developer",
-                    className:
-                      "bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent dark:text-transparent",
-                  },
-                ]}
+                textClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
+                wordClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
               />
             </div>
 

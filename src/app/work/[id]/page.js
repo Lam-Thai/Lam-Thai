@@ -404,7 +404,7 @@ export default function ProjectDetail() {
         "Socket.io",
       ],
       githubUrl: "https://github.com/BB-CommandZ/BanditBreakout",
-      liveUrl: "https://github.com/BB-CommandZ/BanditBreakout",
+      liveUrl: "http://commandz.gochatus.org:30006/",
       features: [
         "In-game shop for special equipment and consumables",
         "Dice-based board movement",
