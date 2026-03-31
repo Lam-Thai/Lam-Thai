@@ -3,6 +3,7 @@ import NavBar from "./components/Nav-Bar";
 import { CardContainer, CardBody, CardItem } from "./components/ui/3d-card";
 import Link from "next/link";
 import AnimatedStatValue from "./components/AnimatedStatValue";
+import { TypewriterEffect } from "./components/ui/typewriter-effect";
 
 export default function Home() {
   return (
@@ -28,12 +29,33 @@ export default function Home() {
               </span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
-              Tuoc Lam Thai{" "}
-              <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent whitespace-nowrap">
-                Web Developer
-              </span>
-            </h1>
+            <div className="space-y-2">
+              <TypewriterEffect
+                className="text-left text-5xl md:text-7xl font-bold leading-tight"
+                cursorClassName="bg-white h-8 md:h-12"
+                words={[
+                  { text: "Tuoc ", className: "text-white" },
+                  { text: "Lam ", className: "text-white" },
+                  { text: "Thai", className: "text-white" },
+                ]}
+              />
+              <TypewriterEffect
+                className="text-left text-5xl md:text-7xl font-bold leading-tight"
+                cursorClassName="bg-amber-400 h-8 md:h-12"
+                words={[
+                  {
+                    text: "Web ",
+                    className:
+                      "bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent dark:text-transparent",
+                  },
+                  {
+                    text: "Developer",
+                    className:
+                      "bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent dark:text-transparent",
+                  },
+                ]}
+              />
+            </div>
 
             <p className="text-xl text-zinc-400 max-w-xl leading-relaxed">
               I&apos;m a full-stack web developer who builds clean, scalable web
