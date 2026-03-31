@@ -2,6 +2,7 @@ import Image from "next/image";
 import NavBar from "./components/Nav-Bar";
 import { CardContainer, CardBody, CardItem } from "./components/ui/3d-card";
 import Link from "next/link";
+import AnimatedStatValue from "./components/AnimatedStatValue";
 
 export default function Home() {
   return (
@@ -122,15 +123,21 @@ export default function Home() {
             {/* Stats */}
             <div className="flex gap-12 pt-8 border-t border-zinc-800">
               <div>
-                <div className="text-3xl font-bold text-white">2+</div>
+                <div className="text-3xl font-bold text-white">
+                  <AnimatedStatValue target={2} suffix="+" />
+                </div>
                 <div className="text-sm text-zinc-500">Years Experience</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-white">10+</div>
+                <div className="text-3xl font-bold text-white">
+                  <AnimatedStatValue target={10} suffix="+" delay={150} />
+                </div>
                 <div className="text-sm text-zinc-500">Projects Completed</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-white">96%</div>
+                <div className="text-3xl font-bold text-white">
+                  <AnimatedStatValue target={96} suffix="%" delay={300} />
+                </div>
                 <div className="text-sm text-zinc-500">Client Satisfaction</div>
               </div>
             </div>
