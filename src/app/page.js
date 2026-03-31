@@ -34,8 +34,8 @@ export default function Home() {
                 className="text-left text-5xl md:text-7xl font-bold leading-tight"
                 cursorClassName="bg-white h-8 md:h-12"
                 words={[
-                  { text: "Tuoc ", className: "text-white" },
-                  { text: "Lam ", className: "text-white" },
+                  { text: "Tuoc", className: "text-white" },
+                  { text: "Lam", className: "text-white" },
                   { text: "Thai", className: "text-white" },
                 ]}
               />
@@ -44,7 +44,7 @@ export default function Home() {
                 cursorClassName="bg-amber-400 h-8 md:h-12"
                 words={[
                   {
-                    text: "Web ",
+                    text: "Web",
                     className:
                       "bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent dark:text-transparent",
                   },
