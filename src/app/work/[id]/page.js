@@ -32,6 +32,8 @@ export default function ProjectDetail() {
       liveUrl:
         "https://www.tandem-app.com/sign-in?redirect_url=https%3A%2F%2Fwww.tandem-app.com%2F",
       blogUrl: "https://tandem-blog.vercel.app/",
+      figmaDesignUrl:
+        "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=2533-3139&p=f&t=PjVaRx0ZO3AkqMhl-0",
       isCaseStudy: true,
       problemStatement:
         "Parents in the trades face a critical technical and operational challenge: their work schedules are unpredictable, often starting at 4-5 AM with constant changes throughout the day. Traditional childcare booking systems operate on fixed schedules and weekly planning cycles, creating a fundamental mismatch with trades workers' actual availability patterns. The problem requires a system capable of dynamic schedule ingestion, real-time matching algorithms, and flexible booking logic.",
@@ -466,6 +468,11 @@ export default function ProjectDetail() {
     );
   }
 
+  const figmaEmbedUrl =
+    projectId === "tandem" && project.figmaDesignUrl
+      ? `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(project.figmaDesignUrl)}`
+      : null;
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black overflow-hidden">
       {/* Animated background grid */}
@@ -596,6 +603,38 @@ export default function ProjectDetail() {
             priority
           />
         </div>
+
+        {projectId === "tandem" && figmaEmbedUrl && (
+          <section className="mb-12 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold text-orange-400">
+                  Hi-Fi Figma Design
+                </h2>
+                <p className="text-sm text-zinc-400 mt-1">
+                  View-only prototype preview. Editing and commenting are disabled.
+                </p>
+              </div>
+              <a
+                href={project.figmaDesignUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg font-medium hover:bg-zinc-700 hover:border-orange-500/50 transition-all"
+              >
+                Open In Figma
+              </a>
+            </div>
+            <div className="w-full h-105 md:h-140 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-950">
+              <iframe
+                src={figmaEmbedUrl}
+                title="Tandem Hi-Fi Figma Design"
+                className="w-full h-full"
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        )}
 
         {/* Project Details */}
         {project.isCaseStudy ? (
