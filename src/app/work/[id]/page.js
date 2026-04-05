@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import NavBar from "../../components/Nav-Bar";
 import Image from "next/image";
@@ -528,6 +528,15 @@ export default function ProjectDetail() {
   const activeFigmaTab =
     figmaTabs.find((tab) => tab.id === selectedFigmaTab) || figmaTabs[0] || null;
 
+  useEffect(() => {
+    if (
+      figmaTabs.length > 0 &&
+      !figmaTabs.some((tab) => tab.id === selectedFigmaTab)
+    ) {
+      setSelectedFigmaTab(figmaTabs[0].id);
+    }
+  }, [figmaTabs, selectedFigmaTab]);
+
   const figmaEmbedUrl = activeFigmaTab
     ? `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(activeFigmaTab.url)}`
     : null;
@@ -693,7 +702,7 @@ export default function ProjectDetail() {
                   type="button"
                   onClick={() => setSelectedFigmaTab(tab.id)}
                   className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                    selectedFigmaTab === tab.id
+                    activeFigmaTab?.id === tab.id
                       ? "bg-orange-500/20 border-orange-500/60 text-orange-300"
                       : "bg-zinc-800/70 border-zinc-700 text-zinc-300 hover:border-orange-500/40 hover:text-white"
                   }`}
