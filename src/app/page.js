@@ -223,7 +223,7 @@ export default function Home() {
             ].map((tech) => (
               <div
                 key={tech}
-                className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-300 text-sm font-medium hover:border-zinc-700 hover:scale-110 transition-all duration-200"
+                className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-300 text-sm font-medium hover:border-zinc-700 hover:scale-[1.2] transition-all duration-300"
               >
                 {tech}
               </div>
