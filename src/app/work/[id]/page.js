@@ -416,6 +416,8 @@ export default function ProjectDetail() {
       ],
       githubUrl: "https://github.com/BB-CommandZ/BanditBreakout",
       liveUrl: "http://commandz.gochatus.org:30006/",
+      figmaPrototypeUrl:
+        "https://www.figma.com/design/Cb3Z0tQ6L83VyVSXv0G2VH/prototyping?t=O3Qkh9Ab59EJZhc3-0",
       features: [
         "In-game shop for special equipment and consumables",
         "Dice-based board movement",
@@ -512,7 +514,16 @@ export default function ProjectDetail() {
             title: "Tandem Ideas Collage Board",
           },
         ].filter((tab) => tab.url)
-      : [];
+      : projectId === "bandit-breakout"
+        ? [
+            {
+              id: "prototype",
+              label: "Prototype",
+              url: project.figmaPrototypeUrl,
+              title: "Bandit Breakout Prototype",
+            },
+          ].filter((tab) => tab.url)
+        : [];
 
   const activeFigmaTab =
     figmaTabs.find((tab) => tab.id === selectedFigmaTab) || figmaTabs[0] || null;
@@ -652,7 +663,9 @@ export default function ProjectDetail() {
           />
         </div>
 
-        {projectId === "tandem" && figmaEmbedUrl && activeFigmaTab && (
+        {(projectId === "tandem" || projectId === "bandit-breakout") &&
+          figmaEmbedUrl &&
+          activeFigmaTab && (
           <section className="mb-12 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 md:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
               <div>
