@@ -39,6 +39,8 @@ export default function ProjectDetail() {
         "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=2005-1695&p=f&t=PjVaRx0ZO3AkqMhl-0",
       figmaUserflowUrl:
         "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=7635-13393&p=f&t=PjVaRx0ZO3AkqMhl-0",
+      figmaComponentsUrl:
+        "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=1-2&p=f&t=PjVaRx0ZO3AkqMhl-0",
       isCaseStudy: true,
       problemStatement:
         "Parents in the trades face a critical technical and operational challenge: their work schedules are unpredictable, often starting at 4-5 AM with constant changes throughout the day. Traditional childcare booking systems operate on fixed schedules and weekly planning cycles, creating a fundamental mismatch with trades workers' actual availability patterns. The problem requires a system capable of dynamic schedule ingestion, real-time matching algorithms, and flexible booking logic.",
@@ -494,6 +496,12 @@ export default function ProjectDetail() {
             label: "Userflow",
             url: project.figmaUserflowUrl,
             title: "Tandem Userflow Figma Design",
+          },
+          {
+            id: "components",
+            label: "Components",
+            url: project.figmaComponentsUrl,
+            title: "Tandem Components Figma Design",
           },
         ].filter((tab) => tab.url)
       : [];
