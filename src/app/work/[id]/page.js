@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import NavBar from "../../components/Nav-Bar";
 import Image from "next/image";
@@ -440,7 +440,7 @@ export default function ProjectDetail() {
         "A modern subscription finance app that helps users track recurring costs, avoid hidden charges, and make smarter keep-or-cancel decisions.",
       fullDescription:
         "SubSave combines a clean dashboard, practical value insights, and an in-app AI assistant so subscription management feels simple and actionable. Users can manage subscriptions, monitor upcoming billing risk, detect trial traps before paid renewal, and optimize duplicate services across shared circles. The platform is production-ready with request tracing, route-level rate limiting, and a live health monitoring card backed by a runtime health endpoint.",
-      image: "/image-converter.avif",
+      image: "/subsave.jpg",
       technologies: [
         "Next.js 14 (App Router)",
         "React 18",
@@ -478,9 +478,68 @@ export default function ProjectDetail() {
   const project = projects[projectId];
   const [selectedFigmaTab, setSelectedFigmaTab] = useState("hifi");
 
+  const figmaTabs = useMemo(() => {
+    if (!project) return [];
+
+    if (projectId === "tandem") {
+      return [
+        {
+          id: "hifi",
+          label: "Hi-Fi",
+          url: project.figmaDesignUrl,
+          title: "Tandem Hi-Fi Figma Design",
+        },
+        {
+          id: "workflow",
+          label: "Workflow",
+          url: project.figmaWorkflowUrl,
+          title: "Tandem Workflow Figma Design",
+        },
+        {
+          id: "userflow",
+          label: "Userflow",
+          url: project.figmaUserflowUrl,
+          title: "Tandem Userflow Figma Design",
+        },
+        {
+          id: "components",
+          label: "Components",
+          url: project.figmaComponentsUrl,
+          title: "Tandem Components Figma Design",
+        },
+        {
+          id: "ideas-collage",
+          label: "Ideas/Collage Board",
+          url: project.figmaIdeasBoardUrl,
+          title: "Tandem Ideas Collage Board",
+        },
+      ].filter((tab) => tab.url);
+    }
+
+    if (projectId === "bandit-breakout") {
+      return [
+        {
+          id: "prototype",
+          label: "Prototype",
+          url: project.figmaPrototypeUrl,
+          title: "Bandit Breakout Prototype",
+        },
+      ].filter((tab) => tab.url);
+    }
+
+    return [];
+  }, [project, projectId]);
+
+  const activeFigmaTab =
+    figmaTabs.find((tab) => tab.id === selectedFigmaTab) || figmaTabs[0] || null;
+
+  const figmaEmbedUrl = activeFigmaTab
+    ? `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(activeFigmaTab.url)}`
+    : null;
+
   if (!project) {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black overflow-hidden">
+      <div className="relative min-h-screen bg-linear-to-br from-black via-zinc-900 to-black overflow-hidden">
         <NavBar />
         <main className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-20 text-center">
           <h1 className="text-4xl font-bold text-white mb-4">
@@ -497,71 +556,10 @@ export default function ProjectDetail() {
     );
   }
 
-  const figmaTabs =
-    projectId === "tandem"
-      ? [
-          {
-            id: "hifi",
-            label: "Hi-Fi",
-            url: project.figmaDesignUrl,
-            title: "Tandem Hi-Fi Figma Design",
-          },
-          {
-            id: "workflow",
-            label: "Workflow",
-            url: project.figmaWorkflowUrl,
-            title: "Tandem Workflow Figma Design",
-          },
-          {
-            id: "userflow",
-            label: "Userflow",
-            url: project.figmaUserflowUrl,
-            title: "Tandem Userflow Figma Design",
-          },
-          {
-            id: "components",
-            label: "Components",
-            url: project.figmaComponentsUrl,
-            title: "Tandem Components Figma Design",
-          },
-          {
-            id: "ideas-collage",
-            label: "Ideas/Collage Board",
-            url: project.figmaIdeasBoardUrl,
-            title: "Tandem Ideas Collage Board",
-          },
-        ].filter((tab) => tab.url)
-      : projectId === "bandit-breakout"
-        ? [
-            {
-              id: "prototype",
-              label: "Prototype",
-              url: project.figmaPrototypeUrl,
-              title: "Bandit Breakout Prototype",
-            },
-          ].filter((tab) => tab.url)
-        : [];
-
-  const activeFigmaTab =
-    figmaTabs.find((tab) => tab.id === selectedFigmaTab) || figmaTabs[0] || null;
-
-  useEffect(() => {
-    if (
-      figmaTabs.length > 0 &&
-      !figmaTabs.some((tab) => tab.id === selectedFigmaTab)
-    ) {
-      setSelectedFigmaTab(figmaTabs[0].id);
-    }
-  }, [figmaTabs, selectedFigmaTab]);
-
-  const figmaEmbedUrl = activeFigmaTab
-    ? `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(activeFigmaTab.url)}`
-    : null;
-
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black overflow-hidden">
+    <div className="relative min-h-screen bg-linear-to-br from-black via-zinc-900 to-black overflow-hidden">
       {/* Animated background grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-size-[50px_50px] mask-[radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
 
       {/* Glowing orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl animate-pulse"></div>
@@ -654,7 +652,7 @@ export default function ProjectDetail() {
               href={project.liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg font-medium hover:from-orange-600 hover:to-amber-600 transition-all"
+              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-orange-500 to-amber-500 text-white rounded-lg font-medium hover:from-orange-600 hover:to-amber-600 transition-all"
             >
               <svg
                 className="w-5 h-5"

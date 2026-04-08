@@ -143,7 +143,7 @@ export default function Work() {
       title: "SubSave",
       description:
         "A modern subscription finance app that helps users track recurring costs, avoid hidden renewals, and make better keep-or-cancel decisions with analytics and in-app AI guidance.",
-      image: "/image-converter.avif",
+      image: "/subsave.jpg",
       technologies: [
         "Next.js 14",
         "React 18",
