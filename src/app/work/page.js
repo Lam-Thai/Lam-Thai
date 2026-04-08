@@ -156,8 +156,8 @@ export default function Work() {
         "Zod",
         "Gemini",
       ],
-      githubUrl: "https://github.com/yourusername/subsave",
-      liveUrl: "https://github.com/yourusername/subsave",
+      githubUrl: "https://github.com/Lam-Thai/SubSave",
+      liveUrl: "https://sub-save-gules.vercel.app/",
     },
   ];
 

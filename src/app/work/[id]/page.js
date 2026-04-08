@@ -456,8 +456,8 @@ export default function ProjectDetail() {
         "PostgreSQL",
         "Gemini API",
       ],
-      githubUrl: "https://github.com/yourusername/subsave",
-      liveUrl: "https://github.com/yourusername/subsave",
+      githubUrl: "https://github.com/Lam-Thai/SubSave",
+      liveUrl: "https://sub-save-gules.vercel.app/",
       features: [
         "Smart dashboard with animated monthly spend, KPI cards, and upcoming billing timeline",
         "Full subscription CRUD for name, category, monthly cost, billing day, trial end date, and monthly usage",
