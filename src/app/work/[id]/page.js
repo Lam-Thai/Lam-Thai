@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import NavBar from "../../components/Nav-Bar";
 import Image from "next/image";
@@ -32,6 +33,16 @@ export default function ProjectDetail() {
       liveUrl:
         "https://www.tandem-app.com/sign-in?redirect_url=https%3A%2F%2Fwww.tandem-app.com%2F",
       blogUrl: "https://tandem-blog.vercel.app/",
+      figmaDesignUrl:
+        "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=2533-3139&p=f&t=PjVaRx0ZO3AkqMhl-0",
+      figmaWorkflowUrl:
+        "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=2005-1695&p=f&t=PjVaRx0ZO3AkqMhl-0",
+      figmaUserflowUrl:
+        "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=7635-13393&p=f&t=PjVaRx0ZO3AkqMhl-0",
+      figmaComponentsUrl:
+        "https://www.figma.com/design/98OrmiJpKUOwDCuckMRcah/Tandem-High-fi?node-id=1-2&p=f&t=PjVaRx0ZO3AkqMhl-0",
+      figmaIdeasBoardUrl:
+        "https://www.figma.com/board/zjo5oreBniMlrpX6qMSwfW/Ideas-Collage-Board?node-id=0-1&p=f&t=vImn5KqgP5s04e9a-0",
       isCaseStudy: true,
       problemStatement:
         "Parents in the trades face a critical technical and operational challenge: their work schedules are unpredictable, often starting at 4-5 AM with constant changes throughout the day. Traditional childcare booking systems operate on fixed schedules and weekly planning cycles, creating a fundamental mismatch with trades workers' actual availability patterns. The problem requires a system capable of dynamic schedule ingestion, real-time matching algorithms, and flexible booking logic.",
@@ -405,6 +416,8 @@ export default function ProjectDetail() {
       ],
       githubUrl: "https://github.com/BB-CommandZ/BanditBreakout",
       liveUrl: "http://commandz.gochatus.org:30006/",
+      figmaPrototypeUrl:
+        "https://www.figma.com/design/Cb3Z0tQ6L83VyVSXv0G2VH/prototyping?t=O3Qkh9Ab59EJZhc3-0",
       features: [
         "In-game shop for special equipment and consumables",
         "Dice-based board movement",
@@ -463,6 +476,7 @@ export default function ProjectDetail() {
   };
 
   const project = projects[projectId];
+  const [selectedFigmaTab, setSelectedFigmaTab] = useState("hifi");
 
   if (!project) {
     return (
@@ -482,6 +496,67 @@ export default function ProjectDetail() {
       </div>
     );
   }
+
+  const figmaTabs =
+    projectId === "tandem"
+      ? [
+          {
+            id: "hifi",
+            label: "Hi-Fi",
+            url: project.figmaDesignUrl,
+            title: "Tandem Hi-Fi Figma Design",
+          },
+          {
+            id: "workflow",
+            label: "Workflow",
+            url: project.figmaWorkflowUrl,
+            title: "Tandem Workflow Figma Design",
+          },
+          {
+            id: "userflow",
+            label: "Userflow",
+            url: project.figmaUserflowUrl,
+            title: "Tandem Userflow Figma Design",
+          },
+          {
+            id: "components",
+            label: "Components",
+            url: project.figmaComponentsUrl,
+            title: "Tandem Components Figma Design",
+          },
+          {
+            id: "ideas-collage",
+            label: "Ideas/Collage Board",
+            url: project.figmaIdeasBoardUrl,
+            title: "Tandem Ideas Collage Board",
+          },
+        ].filter((tab) => tab.url)
+      : projectId === "bandit-breakout"
+        ? [
+            {
+              id: "prototype",
+              label: "Prototype",
+              url: project.figmaPrototypeUrl,
+              title: "Bandit Breakout Prototype",
+            },
+          ].filter((tab) => tab.url)
+        : [];
+
+  const activeFigmaTab =
+    figmaTabs.find((tab) => tab.id === selectedFigmaTab) || figmaTabs[0] || null;
+
+  useEffect(() => {
+    if (
+      figmaTabs.length > 0 &&
+      !figmaTabs.some((tab) => tab.id === selectedFigmaTab)
+    ) {
+      setSelectedFigmaTab(figmaTabs[0].id);
+    }
+  }, [figmaTabs, selectedFigmaTab]);
+
+  const figmaEmbedUrl = activeFigmaTab
+    ? `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(activeFigmaTab.url)}`
+    : null;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black overflow-hidden">
@@ -613,6 +688,58 @@ export default function ProjectDetail() {
             priority
           />
         </div>
+
+        {(projectId === "tandem" || projectId === "bandit-breakout") &&
+          figmaEmbedUrl &&
+          activeFigmaTab && (
+          <section className="mb-12 bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold text-orange-400">
+                  Figma Design Viewer
+                </h2>
+                <p className="text-sm text-zinc-400 mt-1">
+                  View-only prototype preview. Editing and commenting are disabled.
+                </p>
+              </div>
+              <a
+                href={activeFigmaTab.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg font-medium hover:bg-zinc-700 hover:border-orange-500/50 transition-all"
+              >
+                Open In Figma
+              </a>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-5">
+              {figmaTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedFigmaTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                    activeFigmaTab?.id === tab.id
+                      ? "bg-orange-500/20 border-orange-500/60 text-orange-300"
+                      : "bg-zinc-800/70 border-zinc-700 text-zinc-300 hover:border-orange-500/40 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-full h-105 md:h-140 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-950">
+              <iframe
+                src={figmaEmbedUrl}
+                title={activeFigmaTab.title}
+                className="w-full h-full"
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+          </section>
+        )}
 
         {/* Project Details */}
         {project.isCaseStudy ? (
