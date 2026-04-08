@@ -139,14 +139,25 @@ export default function Work() {
       liveUrl: "http://commandz.gochatus.org:30006/",
     },
     {
-      id: "image-converter",
-      title: "Image Converter",
+      id: "subsave",
+      title: "SubSave",
       description:
-        "Built an image converter and filter app that allows users to upload photos, apply real-time visual effects, and export images in multiple formats through a fast, intuitive interface.",
+        "A modern subscription finance app that helps users track recurring costs, avoid hidden renewals, and make better keep-or-cancel decisions with analytics and in-app AI guidance.",
       image: "/image-converter.avif",
-      technologies: ["JavaScript"],
-      githubUrl: "https://github.com/Lam-Thai/image-lab",
-      liveUrl: "https://github.com/Lam-Thai/image-lab",
+      technologies: [
+        "Next.js 14",
+        "React 18",
+        "TypeScript",
+        "Tailwind CSS",
+        "Recharts",
+        "Prisma",
+        "PostgreSQL",
+        "Clerk",
+        "Zod",
+        "Gemini",
+      ],
+      githubUrl: "https://github.com/yourusername/subsave",
+      liveUrl: "https://github.com/yourusername/subsave",
     },
   ];
 

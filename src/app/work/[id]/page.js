@@ -421,27 +421,44 @@ export default function ProjectDetail() {
       solution:
         "Used Socket.io to synchronize turns and game state across players, ensuring consistent and responsive gameplay.",
     },
-    "image-converter": {
-      title: "Image Converter",
+    subsave: {
+      title: "SubSave",
       description:
-        "Built an image converter and filter app that allows users to upload photos, apply real-time visual effects, and export images in multiple formats through a fast, intuitive interface.",
+        "A modern subscription finance app that helps users track recurring costs, avoid hidden charges, and make smarter keep-or-cancel decisions.",
       fullDescription:
-        "A comprehensive image converter and filter app that allows users to upload photos, apply real-time visual effects, and export images in multiple formats through a fast, intuitive interface.",
+        "SubSave combines a clean dashboard, practical value insights, and an in-app AI assistant so subscription management feels simple and actionable. Users can manage subscriptions, monitor upcoming billing risk, detect trial traps before paid renewal, and optimize duplicate services across shared circles. The platform is production-ready with request tracing, route-level rate limiting, and a live health monitoring card backed by a runtime health endpoint.",
       image: "/image-converter.avif",
-      technologies: ["JavaScript"],
-      githubUrl: "https://github.com/Lam-Thai/image-lab",
-      liveUrl: "https://github.com/Lam-Thai/image-lab",
+      technologies: [
+        "Next.js 14 (App Router)",
+        "React 18",
+        "TypeScript 5",
+        "Tailwind CSS",
+        "Recharts",
+        "Lucide React",
+        "shadcn/ui",
+        "Radix UI",
+        "Zod",
+        "Clerk",
+        "Prisma ORM",
+        "PostgreSQL",
+        "Gemini API",
+      ],
+      githubUrl: "https://github.com/yourusername/subsave",
+      liveUrl: "https://github.com/yourusername/subsave",
       features: [
-        "Image upload with instant preview",
-        "Real-time filter application (grayscale, sepia, blur, etc.)",
-        "Image format conversion (JPG, PNG, WebP)",
-        "Responsive, user-friendly interface",
-        "Error handling for unsupported files",
+        "Smart dashboard with animated monthly spend, KPI cards, and upcoming billing timeline",
+        "Full subscription CRUD for name, category, monthly cost, billing day, trial end date, and monthly usage",
+        "Usage Value analytics with Recharts dual-view toggle (cost per use and cost vs usage)",
+        "Trial Trap Detector to flag trials ending soon before paid renewal",
+        "Sharing Optimizer to detect duplicate subscriptions and suggest consolidation",
+        "In-app Gemini assistant with authenticated server route, scoped responses, and graceful fallback behavior",
+        "Premium UI motion system with staggered reveals, hover lift, animated accents, and reduced-motion support",
+        "Production reliability features: x-request-id tracing, rate limiting, and /api/health with live dashboard polling",
       ],
       challenges:
-        "Maintaining smooth performance while applying real-time image filters without causing UI lag on large image files.",
+        "Designing a finance-oriented dashboard that remains easy to use while combining real-time analytics, authenticated AI interactions, and resilient API behavior under provider or traffic constraints.",
       solution:
-        "Implemented client-side image processing with optimized rendering and debounced filter updates to ensure responsive, real-time previews without blocking the UI.",
+        "Built a modular Next.js App Router architecture with Clerk-protected routes, Zod-validated handlers, Prisma-backed PostgreSQL models, and immediate client-side data refresh patterns; paired it with robust operational safeguards such as request IDs, endpoint rate limiting, and periodic health checks surfaced directly in the UI.",
     },
   };
 
