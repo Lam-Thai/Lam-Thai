@@ -30,6 +30,27 @@ export default function Work() {
         "https://www.tandem-app.com/sign-in?redirect_url=https%3A%2F%2Fwww.tandem-app.com%2F",
     },
     {
+      id: "subsave",
+      title: "SubSave",
+      description:
+        "A modern subscription finance app that helps users track recurring costs, avoid hidden renewals, and make better keep-or-cancel decisions with analytics and in-app AI guidance.",
+      image: "/subsave.jpg",
+      technologies: [
+        "Next.js 14",
+        "React 18",
+        "TypeScript",
+        "Tailwind CSS",
+        "Recharts",
+        "Prisma",
+        "PostgreSQL",
+        "Clerk",
+        "Zod",
+        "Gemini",
+      ],
+      githubUrl: "https://github.com/Lam-Thai/SubSave",
+      liveUrl: "https://sub-save-gules.vercel.app/",
+    },
+    {
       id: "expense-tracker",
       title: "Expenses Tracker",
       description:
@@ -140,27 +161,6 @@ export default function Work() {
       ],
       githubUrl: "https://github.com/BB-CommandZ/BanditBreakout",
       liveUrl: "http://commandz.gochatus.org:30006/",
-    },
-    {
-      id: "subsave",
-      title: "SubSave",
-      description:
-        "A modern subscription finance app that helps users track recurring costs, avoid hidden renewals, and make better keep-or-cancel decisions with analytics and in-app AI guidance.",
-      image: "/subsave.jpg",
-      technologies: [
-        "Next.js 14",
-        "React 18",
-        "TypeScript",
-        "Tailwind CSS",
-        "Recharts",
-        "Prisma",
-        "PostgreSQL",
-        "Clerk",
-        "Zod",
-        "Gemini",
-      ],
-      githubUrl: "https://github.com/Lam-Thai/SubSave",
-      liveUrl: "https://sub-save-gules.vercel.app/",
     },
   ];
 
