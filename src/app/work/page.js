@@ -51,28 +51,6 @@ export default function Work() {
       liveUrl: "https://sub-save-gules.vercel.app/",
     },
     {
-      id: "expense-tracker",
-      title: "Expenses Tracker",
-      description:
-        "Built a full-stack expense tracking web app with secure authentication, type-safe data handling, and a scalable modern architecture using TypeScript and PostgreSQL.",
-      image: "/expense-tracker.jpg",
-      technologies: [
-        "Vite",
-        "React",
-        "TypeScript",
-        "Hono",
-        "Bun",
-        "Drizzle ORM",
-        "PostgreSQL",
-        "Tailwind CSS",
-        "Kinde Auth",
-        "Zod",
-        "Render",
-      ],
-      githubUrl: "https://github.com/Lam-Thai/Expenses-App",
-      liveUrl: "https://expenses-app-3ebn.onrender.com/",
-    },
-    {
       id: "insurflow",
       title: "InsurFlow - Vero Ventures",
       description:
@@ -125,6 +103,28 @@ export default function Work() {
       ],
       githubUrl: "https://github.com/Vero-Ventures",
       liveUrl: "https://insurflow.biz/",
+    },
+    {
+      id: "expense-tracker",
+      title: "Expenses Tracker",
+      description:
+        "Built a full-stack expense tracking web app with secure authentication, type-safe data handling, and a scalable modern architecture using TypeScript and PostgreSQL.",
+      image: "/expense-tracker.jpg",
+      technologies: [
+        "Vite",
+        "React",
+        "TypeScript",
+        "Hono",
+        "Bun",
+        "Drizzle ORM",
+        "PostgreSQL",
+        "Tailwind CSS",
+        "Kinde Auth",
+        "Zod",
+        "Render",
+      ],
+      githubUrl: "https://github.com/Lam-Thai/Expenses-App",
+      liveUrl: "https://expenses-app-3ebn.onrender.com/",
     },
     {
       id: "bookstore",
