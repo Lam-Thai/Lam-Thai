@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import NavBar from "../components/Nav-Bar";
 import Image from "next/image";
 import Link from "next/link";
@@ -165,6 +166,29 @@ export default function Work() {
   ];
 
   const MAX_VISIBLE_TECH = 6; // Maximum number of technologies to show
+  const ALL_TECH_LABEL = "All";
+
+  const [selectedTech, setSelectedTech] = useState(ALL_TECH_LABEL);
+
+  const techOptions = useMemo(() => {
+    const uniqueTech = new Set();
+
+    projects.forEach((project) => {
+      project.technologies.forEach((tech) => uniqueTech.add(tech));
+    });
+
+    return [ALL_TECH_LABEL, ...Array.from(uniqueTech).sort()];
+  }, [projects]);
+
+  const filteredProjects = useMemo(() => {
+    if (selectedTech === ALL_TECH_LABEL) {
+      return projects;
+    }
+
+    return projects.filter((project) =>
+      project.technologies.includes(selectedTech)
+    );
+  }, [projects, selectedTech]);
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black overflow-hidden">
@@ -190,12 +214,34 @@ export default function Work() {
             A collection of projects I&apos;ve built using modern web
             technologies
           </p>
+
+          <div className="mt-8 max-w-xl mx-auto text-left">
+            <label
+              htmlFor="tech-filter"
+              className="block mb-2 text-sm font-medium text-zinc-300"
+            >
+              Filter by tech stack
+            </label>
+            <select
+              id="tech-filter"
+              value={selectedTech}
+              onChange={(event) => setSelectedTech(event.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-zinc-900/90 border border-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-500/60 focus:border-orange-500"
+            >
+              {techOptions.map((techOption) => (
+                <option key={techOption} value={techOption}>
+                  {techOption}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project, index) => (
-            <CardContainer key={index} containerClassName="py-8">
+        {filteredProjects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProjects.map((project) => (
+              <CardContainer key={project.id} containerClassName="py-8">
               <CardBody className="bg-zinc-900/50 relative group/card border border-zinc-800 w-full h-full rounded-xl p-6 hover:border-orange-500/50 transition-all flex flex-col min-h-[500px]">
                 <Link
                   href={`/work/${project.id}`}
@@ -311,8 +357,19 @@ export default function Work() {
                 </div>
               </CardBody>
             </CardContainer>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 px-6 rounded-xl border border-zinc-800 bg-zinc-900/40">
+            <h2 className="text-2xl font-semibold text-white mb-2">
+              No projects found
+            </h2>
+            <p className="text-zinc-400">
+              No projects currently use <span className="text-orange-400">{selectedTech}</span>.
+              Try another tech stack from the filter.
+            </p>
+          </div>
+        )}
 
         {/* View More */}
         <div className="text-center mt-12">
