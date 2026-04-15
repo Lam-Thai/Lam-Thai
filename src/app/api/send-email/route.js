@@ -1,8 +1,6 @@
 import { Resend } from "resend";
 import { NextResponse } from "next/server";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // In-memory rate limiting (for simple use case)
 // For production, consider using Redis or a database
 const emailTracker = new Map();
@@ -57,6 +55,16 @@ function recordSubmission(key) {
 
 export async function POST(request) {
   try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      return NextResponse.json(
+        { error: "Email service is not configured" },
+        { status: 503 },
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
+
     const { name, email, subject, message } = await request.json();
 
     // Validate input
