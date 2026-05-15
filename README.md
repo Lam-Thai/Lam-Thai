@@ -5,7 +5,7 @@ Full-stack developer based in British Columbia with experience building scalable
 ## Tech Stack ⚙️
 
 ### Languages 🧾
-JavaScript 🟨 • TypeScript 🟦 • C# ⚙️ • PHP 🟪 • Java ☕ • HTML/CSS 🎨
+JavaScript 🟨 • TypeScript 🟦 • C# ⚙️ • PHP 🟪 • HTML/CSS 🎨
 
 ### Frontend ✨
 React ⚛️ • Next.js ⚡ • Vue.js 🟢 • Nuxt.js 🌊 • TailwindCSS 🎨 • Vite ⚡
