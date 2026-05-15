@@ -1,27 +1,27 @@
-# Hi, I'm Lam Thai 👋
+# Hi, I'm Lam Thai 👋🧑🏻‍💻
 
 Full-stack developer based in British Columbia with experience building scalable web applications, AI-powered tools, and modern SaaS platforms.
 
-## Tech Stack
+## Tech Stack ⚙️
 
-### Languages
-JavaScript • TypeScript • C# • PHP • Java • HTML/CSS
+### Languages 🧾
+JavaScript 🟨 • TypeScript 🟦 • C# ⚙️ • PHP 🟪 • Java ☕ • HTML/CSS 🎨
 
-### Frontend
-React • Next.js • Vue.js • Nuxt.js • TailwindCSS • Vite
+### Frontend ✨
+React ⚛️ • Next.js ⚡ • Vue.js 🟢 • Nuxt.js 🌊 • TailwindCSS 🎨 • Vite ⚡
 
-### Backend
-Node.js • Express.js • Hono • Prisma • Drizzle ORM • PostgreSQL • MySQL
+### Backend 🧩
+Node.js 🟩 • Express.js 🚂 • Hono ⚡ • Prisma 🛠️ • Drizzle ORM 💧 • PostgreSQL 🐘 • MySQL 🐬
 
-### Tools & Platforms
-Git • Vercel • Clerk • Stripe • Neon • VS Code • SonarCloud
+### Tools & Platforms 🛠️
+Git 🐙 • Vercel ⚡ • Clerk 🔐 • Stripe 💳 • Neon 🌐 • VS Code 🧭 • SonarCloud 🔎
 
-### AI Tools
+### AI Tools 🤖
 Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 
 ---
 
-## Experience
+## Experience 🧠
 
 ### Full-stack Developer Intern @ Vero Ventures
 - Built multi-tenant InsurTech SaaS features using Next.js 14 and TypeScript
@@ -31,7 +31,7 @@ Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 
 ---
 
-## Featured Projects
+## Featured Projects 🚀
 
 ### SubSave
 Subscription analytics platform built with Next.js and PostgreSQL.
@@ -61,7 +61,7 @@ Next.js • TailwindCSS • Clerk • Neon • WatsonX
 
 ---
 
-## Education
+## Education 🎓
 
 ### British Columbia Institute of Technology (BCIT)
 Full-stack Web Development Diploma  
@@ -72,7 +72,7 @@ Bachelor’s Degree in Graphic Design
 
 ---
 
-## Links
+## Links 🔗
 
 - Portfolio: https://lam-thai.com
 - LinkedIn: https://linkedin.com/in/tuoclamthai
@@ -80,21 +80,3 @@ Bachelor’s Degree in Graphic Design
 
 ---
 
-## Currently Interested In
-
-- Full-stack software engineering
-- AI-integrated applications
-- SaaS product development
-- Frontend engineering
-- Developer experience and scalable systems
-
-You can also add these badges/icons to make it look more polished:
-
-Tech Icons:
-[![My Skills](https://skillicons.dev/icons?i=ts,js,react,nextjs,nodejs,postgres,prisma,tailwind,vue,git)](https://skillicons.dev)
-
-GitHub Stats:
-![Lam's GitHub stats](https://github-readme-stats.vercel.app/api?username=Lam-Thai&show_icons=true)
-
-Top Languages:
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Lam-Thai&layout=compact)
