@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Hi, I'm Lam Thai 👋
 
-## Getting Started
+Full-stack developer based in British Columbia with experience building scalable web applications, AI-powered tools, and modern SaaS platforms.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Languages
+JavaScript • TypeScript • C# • PHP • Java • HTML/CSS
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Frontend
+React • Next.js • Vue.js • Nuxt.js • TailwindCSS • Vite
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Backend
+Node.js • Express.js • Hono • Prisma • Drizzle ORM • PostgreSQL • MySQL
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Tools & Platforms
+Git • Vercel • Clerk • Stripe • Neon • VS Code • SonarCloud
 
-## Learn More
+### AI Tools
+Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Experience
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Full-stack Developer Intern @ Vero Ventures
+- Built multi-tenant InsurTech SaaS features using Next.js 14 and TypeScript
+- Developed AI-powered financial planning and advisory tools
+- Created advisor workflows, insurance visualizations, and PDF generation systems
+- Improved maintainability with refactoring and SonarCloud integration
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Featured Projects
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### SubSave
+Subscription analytics platform built with Next.js and PostgreSQL.
+
+Features:
+- Real-time dashboards
+- Subscription tracking
+- AI-powered spending insights
+- Secure API architecture
+
+Tech:
+Next.js • TypeScript • Prisma • PostgreSQL • Gemini API
+
+---
+
+### Tandem
+Scheduling platform designed for trades families.
+
+Features:
+- Unified scheduling system
+- AI voice/text schedule ingestion
+- Responsive dashboard UI
+- Live production deployment
+
+Tech:
+Next.js • TailwindCSS • Clerk • Neon • WatsonX
+
+---
+
+## Education
+
+### British Columbia Institute of Technology (BCIT)
+Full-stack Web Development Diploma  
+2024 – 2026
+
+### FPT University
+Bachelor’s Degree in Graphic Design
+
+---
+
+## Links
+
+- Portfolio: https://lam-thai.com
+- LinkedIn: https://linkedin.com/in/tuoclamthai
+- GitHub: https://github.com/Lam-Thai
+
+---
+
+## Currently Interested In
+
+- Full-stack software engineering
+- AI-integrated applications
+- SaaS product development
+- Frontend engineering
+- Developer experience and scalable systems
+
+You can also add these badges/icons to make it look more polished:
+
+Tech Icons:
+[![My Skills](https://skillicons.dev/icons?i=ts,js,react,nextjs,nodejs,postgres,prisma,tailwind,vue,git)](https://skillicons.dev)
+
+GitHub Stats:
+![Lam's GitHub stats](https://github-readme-stats.vercel.app/api?username=Lam-Thai&show_icons=true)
+
+Top Languages:
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Lam-Thai&layout=compact)
