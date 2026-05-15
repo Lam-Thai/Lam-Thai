@@ -31,36 +31,6 @@ Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 
 ---
 
-## Featured Projects 🚀
-
-### SubSave
-Subscription analytics platform built with Next.js and PostgreSQL.
-
-Features:
-- Real-time dashboards
-- Subscription tracking
-- AI-powered spending insights
-- Secure API architecture
-
-Tech:
-Next.js • TypeScript • Prisma • PostgreSQL • Gemini API
-
----
-
-### Tandem
-Scheduling platform designed for trades families.
-
-Features:
-- Unified scheduling system
-- AI voice/text schedule ingestion
-- Responsive dashboard UI
-- Live production deployment
-
-Tech:
-Next.js • TailwindCSS • Clerk • Neon • WatsonX
-
----
-
 ## Education 🎓
 
 ### British Columbia Institute of Technology (BCIT)
