@@ -16,7 +16,7 @@ export default function ProjectDetail() {
       "A modern SaaS landing experience built with Next.js App Router, polished motion, premium UI sections, and auth-ready routes for growth into a full product.",
     fullDescription:
       "Landly is a polished SaaS landing experience focused on clarity, conversion, and technical depth. It pairs a cinematic hero, high-signal feature sections, and motion-driven UI with auth-ready routes, AI and PDF endpoints, Prisma-backed PostgreSQL, Stripe billing, and webhook-driven user sync so the design can grow into a production product without rework.",
-    image: "/logo.svg",
+    image: "/ats_scan.avif",
     technologies: [
       "Next.js 15",
       "React 19",

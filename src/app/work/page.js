@@ -110,7 +110,7 @@ export default function Work() {
       title: "Landly",
       description:
         "A modern SaaS landing experience built with Next.js App Router, polished motion, premium UI sections, and auth-ready routes for growth into a full product.",
-      image: "/logo.svg",
+      image: "/ats_scan.avif",
       technologies: [
         "Next.js 15",
         "React 19",
