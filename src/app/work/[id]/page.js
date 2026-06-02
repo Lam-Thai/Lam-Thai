@@ -10,6 +10,46 @@ export default function ProjectDetail() {
   const params = useParams();
   const projectId = params.id;
 
+  const landlyProject = {
+    title: "Landly",
+    description:
+      "A modern SaaS landing experience built with Next.js App Router, polished motion, premium UI sections, and auth-ready routes for growth into a full product.",
+    fullDescription:
+      "Landly is a polished SaaS landing experience focused on clarity, conversion, and technical depth. It pairs a cinematic hero, high-signal feature sections, and motion-driven UI with auth-ready routes, AI and PDF endpoints, Prisma-backed PostgreSQL, Stripe billing, and webhook-driven user sync so the design can grow into a production product without rework.",
+    image: "/logo.svg",
+    technologies: [
+      "Next.js 15",
+      "React 19",
+      "Tailwind CSS 4",
+      "Framer Motion",
+      "Clerk",
+      "Prisma 7",
+      "PostgreSQL",
+      "@prisma/adapter-pg",
+      "@google/generative-ai",
+      "@react-pdf/renderer",
+      "Svix",
+      "Stripe",
+      "Playwright",
+      "Husky",
+    ],
+    githubUrl: "https://github.com/Lam-Thai/Landly",
+    liveUrl: "https://landly-rho.vercel.app/",
+    features: [
+      "Premium hero and feature sections with polished motion",
+      "Clerk-auth-ready public and protected routes",
+      "Gemini completions with primary and backup API key fallback",
+      "Authenticated PDF generation via a dedicated API route",
+      "Stripe checkout plus webhook-driven subscription sync",
+      "Clerk webhook user synchronization through Svix",
+      "Playwright E2E coverage with Husky pre-push gating",
+    ],
+    challenges:
+      "Combining a conversion-focused marketing surface with production-ready integrations without making the landing page feel like a dashboard.",
+    solution:
+      "Separated the experience into reusable UI sections, protected route boundaries, and focused API endpoints so the marketing layer stays polished while the app can expand into a full SaaS product.",
+  };
+
   // Project data (same as in work page)
   const projects = {
     tandem: {
@@ -261,42 +301,8 @@ export default function ProjectDetail() {
         "Database query p99 latency: <100ms for booking lookups",
       ],
     },
-    "expense-tracker": {
-      title: "Expenses Tracker",
-      description:
-        "Built a full-stack expense tracking web app with secure authentication, type-safe data handling, and a scalable modern architecture using TypeScript and PostgreSQL.",
-      fullDescription:
-        "ExpensesApp is a full-stack web application that helps users securely track, manage, and categorize personal expenses in real time. Built with modern, type-safe tooling, it features user authentication, full CRUD functionality, and a scalable architecture for reliable personal finance management.",
-      image: "/expense-tracker.jpg",
-      technologies: [
-        "Vite",
-        "React",
-        "TypeScript",
-        "Hono",
-        "Bun",
-        "Drizzle ORM",
-        "PostgreSQL",
-        "Tailwind CSS",
-        "Kinde Auth",
-        "Zod",
-        "Render",
-      ],
-      githubUrl: "https://github.com/Lam-Thai/Expenses-App",
-      liveUrl: "https://expenses-app-3ebn.onrender.com/",
-      features: [
-        "Secure user authentication",
-        "Create, read, update, and delete (CRUD) expenses",
-        "Expense categorization and tracking",
-        "Real-time state management",
-        "Type-safe database interactions",
-        "Responsive, modern UI",
-        "Scalable and modular architecture",
-      ],
-      challenges:
-        "Maintaining data consistency and security while managing real-time expense updates across authenticated users.",
-      solution:
-        "Implemented type-safe APIs with Drizzle ORM and Zod validation alongside secure authentication, ensuring reliable data handling and safe CRUD operations throughout the application.",
-    },
+    landly: landlyProject,
+    "expense-tracker": landlyProject,
     insurflow: {
       title: "InsurFlow - Vero Ventures",
       description:
@@ -679,7 +685,10 @@ export default function ProjectDetail() {
             alt={project.title}
             fill
             className={
-              projectId === "insurflow" || projectId === "tandem"
+              projectId === "insurflow" ||
+              projectId === "tandem" ||
+              projectId === "landly" ||
+              projectId === "expense-tracker"
                 ? "object-contain p-12"
                 : "object-cover"
             }

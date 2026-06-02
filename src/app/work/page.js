@@ -106,26 +106,26 @@ export default function Work() {
       liveUrl: "https://insurflow.biz/",
     },
     {
-      id: "expense-tracker",
-      title: "Expenses Tracker",
+      id: "landly",
+      title: "Landly",
       description:
-        "Built a full-stack expense tracking web app with secure authentication, type-safe data handling, and a scalable modern architecture using TypeScript and PostgreSQL.",
-      image: "/expense-tracker.jpg",
+        "A modern SaaS landing experience built with Next.js App Router, polished motion, premium UI sections, and auth-ready routes for growth into a full product.",
+      image: "/logo.svg",
       technologies: [
-        "Vite",
-        "React",
-        "TypeScript",
-        "Hono",
-        "Bun",
-        "Drizzle ORM",
-        "PostgreSQL",
+        "Next.js 15",
+        "React 19",
         "Tailwind CSS",
-        "Kinde Auth",
-        "Zod",
-        "Render",
+        "Framer Motion",
+        "Clerk",
+        "Prisma 7",
+        "PostgreSQL",
+        "Gemini",
+        "Stripe",
+        "Playwright",
+        "Husky",
       ],
-      githubUrl: "https://github.com/Lam-Thai/Expenses-App",
-      liveUrl: "https://expenses-app-3ebn.onrender.com/",
+      githubUrl: "https://github.com/Lam-Thai/Landly",
+      liveUrl: "https://landly-rho.vercel.app/",
     },
     {
       id: "bookstore",
@@ -257,7 +257,7 @@ export default function Work() {
                         src={project.image}
                         alt={project.title}
                         fill
-                        className={`${project.id === "insurflow" || project.id === "tandem" ? "object-contain p-8" : "object-cover"} group-hover/card:scale-110 transition-transform duration-300`}
+                        className={`${project.id === "insurflow" || project.id === "tandem" || project.id === "landly" ? "object-contain p-8" : "object-cover"} group-hover/card:scale-110 transition-transform duration-300`}
                       />
                     </div>
                   </CardItem>
