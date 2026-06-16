@@ -23,7 +23,7 @@ export const designEntries = {
     description:
       "Coursework and projects spanning branding, editorial layouts, 3D asset creation, photography, and a curated portfolio of visual design work.",
     details: ["Illustrations", "3D", "Photograph", "Portfolio"],
-    thumb: "/design/3D/3D_FRONT.png",
+    thumb: "/fpt-uni.jpg",
     categories: [
       {
         id: "3d",
@@ -71,7 +71,7 @@ export const designEntries = {
     description:
       "Exchange semester focused on typography and magazine design, exploring layout systems, type-setting, and print workflows.",
     details: ["Typography", "Magazine"],
-    thumb: "/design/3D/3D_LEFT.png",
+    thumb: "/hongik-uni.jpg",
     categories: [
       {
         id: "typography",

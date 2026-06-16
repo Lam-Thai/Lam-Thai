@@ -1,7 +1,7 @@
 import NavBar from "../../components/Nav-Bar";
 import Link from "next/link";
-import Image from "next/image";
 import DesignAssetViewer from "../../components/DesignAssetViewer";
+import DesignEntryThumb from "../../components/DesignEntryThumb";
 import { getDesignEntry, getDesignEntryList } from "../../../lib/design-entries";
 
 export function generateStaticParams() {
@@ -75,15 +75,12 @@ export default async function DesignEntry({ params }) {
           </ul>
         </header>
 
-        <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border border-zinc-800 mb-16">
-          <Image
-            src={entry.thumb}
-            alt={entry.title}
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
+        <DesignEntryThumb
+          src={entry.thumb}
+          alt={entry.title}
+          className="h-56 md:h-72 rounded-xl mb-16 max-w-2xl mx-auto"
+          priority
+        />
 
         <div className="space-y-16">
           {entry.categories.map((category) => (
