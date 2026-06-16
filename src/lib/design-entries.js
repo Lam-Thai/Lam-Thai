@@ -69,13 +69,13 @@ export const designEntries = {
     subtitle: "Exchange program",
     date: "Feb 2023 — Jun 2023",
     description:
-      "Exchange semester focused on typography and magazine design, exploring layout systems, type-setting, and print workflows.",
-    details: ["Typography", "Magazine"],
+      "Exchange semester focused on typography, web research, and magazine design, exploring layout systems, type-setting, and print workflows.",
+    details: ["Typography", "Magazine", "Web Research"],
     thumb: "/hongik-uni.jpg",
     categories: [
       {
         id: "typography",
-        label: "Typography",
+        label: "Typography & Web Research",
         assets: [
           asset(
             "typography",
