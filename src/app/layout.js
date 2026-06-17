@@ -8,7 +8,7 @@ const anekLatin = Anek_Latin({
 });
 
 export const metadata = {
-  title: "Lam Thai - Web Developer",
+  title: "Lam Thai - Full-stack Developer",
   description:
     "Create web applications with clean and scalable code. Full-stack web developer specializing in intuitive front-end experiences and robust back-end systems.",
   icons: {

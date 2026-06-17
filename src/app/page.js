@@ -38,7 +38,14 @@ export default function Home() {
                 wordClassName="text-white"
               />
               <TextGenerateEffect
-                words="Web Developer"
+                words="Developer"
+                duration={0.45}
+                className="text-left text-5xl md:text-7xl font-bold leading-tight"
+                textClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
+                wordClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
+              />
+              <TextGenerateEffect
+                words="Designer"
                 duration={0.45}
                 className="text-left text-5xl md:text-7xl font-bold leading-tight"
                 textClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
@@ -47,9 +54,9 @@ export default function Home() {
             </div>
 
             <p className="text-xl text-zinc-400 max-w-xl leading-relaxed">
-              I&apos;m a full-stack web developer who builds clean, scalable web
+              I&apos;m a full-stack developer and graphic designer who builds clean, scalable web
               applications from intuitive front-end experiences to robust
-              back-end systems.
+              back-end systems and design beautiful user interfaces.
             </p>
 
             {/* CTA Buttons */}
@@ -195,6 +202,9 @@ export default function Home() {
             {[
               "JavaScript",
               "TypeScript",
+              "Python",
+              "MongoDB",
+              "Mongoose",
               "HTML/CSS",
               "React.js",
               "Next.js",
