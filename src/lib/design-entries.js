@@ -70,14 +70,10 @@ export const designEntries = {
     date: "Feb 2023 — Jun 2023",
     description:
       "Exchange semester focused on typography, web research, and magazine design, exploring layout systems, type-setting, and print workflows.",
-    details: ["Typography", "Magazine", "Web Research"],
+    details: ["Typography", "Magazine", "Web Research", "Video Editing"],
     thumb: "/hongik-uni.jpg",
     categories: [
-      {
-        id: "video",
-        label: "Video",
-        assets: [asset("video", "pippo.mp4", "Pippop")],
-      },
+      
       {
         id: "typography",
         label: "Typography & Web Research",
@@ -95,6 +91,11 @@ export const designEntries = {
         ],
       },
       {
+        id: "video",
+        label: "Video",
+        assets: [asset("video", "pippo.mp4", "Pippop")],
+      },
+      {
         id: "magazine",
         label: "Magazine",
         assets: [
@@ -106,6 +107,7 @@ export const designEntries = {
           ),
         ],
       },
+      
     ],
   },
 };
