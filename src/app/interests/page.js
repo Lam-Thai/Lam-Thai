@@ -12,7 +12,7 @@ export default function Interests() {
   const interests = [
     {
       title: "Gaming",
-      image: "/interests/gaming.jpg",
+      image: "/interests/tft.jpg",
       gradient: "from-purple-500 to-indigo-500",
     },
     {
