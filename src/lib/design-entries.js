@@ -74,6 +74,11 @@ export const designEntries = {
     thumb: "/hongik-uni.jpg",
     categories: [
       {
+        id: "video",
+        label: "Video",
+        assets: [asset("video", "pippo.mp4", "Pippop")],
+      },
+      {
         id: "typography",
         label: "Typography & Web Research",
         assets: [
@@ -119,4 +124,8 @@ export function isPdfAsset(path) {
 
 export function isImageAsset(path) {
   return /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(path);
+}
+
+export function isVideoAsset(path) {
+  return /\.(mp4|webm|ogg)$/i.test(path);
 }

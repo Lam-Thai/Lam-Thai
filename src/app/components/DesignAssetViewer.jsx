@@ -3,6 +3,7 @@ import {
   encodeAssetPath,
   isImageAsset,
   isPdfAsset,
+  isVideoAsset,
 } from "../../lib/design-entries";
 
 export default function DesignAssetViewer({ path, label }) {
@@ -25,7 +26,7 @@ export default function DesignAssetViewer({ path, label }) {
         <iframe
           src={`${src}#toolbar=0&navpanes=0&view=FitH`}
           title={label}
-          className="w-full h-[70vh] min-h-[480px] bg-zinc-100"
+          className="w-full h-[70vh] min-h-120 bg-zinc-100"
         />
       </div>
     );
@@ -37,7 +38,7 @@ export default function DesignAssetViewer({ path, label }) {
         <div className="px-4 py-3 border-b border-zinc-800">
           <span className="text-sm font-medium text-zinc-200">{label}</span>
         </div>
-        <div className="relative w-full aspect-[4/3] bg-zinc-800">
+        <div className="relative w-full aspect-4/3 bg-zinc-800">
           <Image
             src={src}
             alt={label}
@@ -46,6 +47,23 @@ export default function DesignAssetViewer({ path, label }) {
             sizes="(max-width: 768px) 100vw, 80vw"
           />
         </div>
+      </div>
+    );
+  }
+
+  if (isVideoAsset(path)) {
+    return (
+      <div className="w-full rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <span className="text-sm font-medium text-zinc-200">{label}</span>
+        </div>
+        <video
+          src={src}
+          controls
+          playsInline
+          preload="metadata"
+          className="w-full bg-black aspect-video"
+        />
       </div>
     );
   }
