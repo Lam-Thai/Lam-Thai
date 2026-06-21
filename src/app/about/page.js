@@ -20,7 +20,14 @@ export default function About() {
         "Studied graphic design principles, visual communication, and multimedia production. Developed skills in Adobe Creative Suite, UI/UX design, and digital marketing strategies.",
     },
     {
-      name: "Hongik University - Exchange Student in Visual Design",
+      name: "FPT Software - Junior Graphic Designer",
+      designation: "Apr 2022 - May 2023 | Ho Chi Minh City, Vietnam",
+      src: "/fpt-software.png",
+      quote:
+        "Designed marketing materials, social media graphics, and UI elements for various projects. Collaborated with cross-functional teams to create visually appealing content that aligned with brand guidelines.",
+    },
+    {
+      name: "Hongik University - Exchange Student/Volunteer in Visual Design",
       designation: "Feb 2023 - June 2023 | Seoul, South Korea",
       src: "/hongik-uni.jpg",
       quote:
