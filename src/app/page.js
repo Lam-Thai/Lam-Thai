@@ -123,7 +123,7 @@ export default function Home() {
                 <span className="text-sm font-medium">LinkedIn</span>
               </a>
               <a
-                href="/resume.pdf"
+                href="/resume_developer.pdf"
                 download
                 className="flex items-center gap-2 text-zinc-400 hover:text-orange-400 transition-colors group"
               >
@@ -141,7 +141,28 @@ export default function Home() {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <span className="text-sm font-medium">Download Resume</span>
+                <span className="text-sm font-medium">Download Developer Resume</span>
+              </a>
+              <a
+                href="/resume_graphic_design.pdf"
+                download
+                className="flex items-center gap-2 text-zinc-400 hover:text-orange-400 transition-colors group"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <span className="text-sm font-medium">Download Graphic Designer Resume</span>
               </a>
             </div>
 
