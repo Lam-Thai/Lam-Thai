@@ -2,7 +2,49 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+
+function ModeToggle({ onNavigate, className = "" }) {
+  const pathname = usePathname();
+  const isGameMode = pathname === "/game";
+
+  const baseOption =
+    "px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300";
+
+  return (
+    <div
+      className={`flex items-center gap-1 p-1 rounded-full border border-zinc-700 bg-zinc-900/80 ${className}`}
+      role="group"
+      aria-label="Site mode"
+    >
+      <Link
+        href="/"
+        onClick={onNavigate}
+        aria-current={!isGameMode ? "true" : undefined}
+        className={`${baseOption} ${
+          !isGameMode
+            ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow"
+            : "text-zinc-400 hover:text-orange-400"
+        }`}
+      >
+        Normal
+      </Link>
+      <Link
+        href="/game"
+        onClick={onNavigate}
+        aria-current={isGameMode ? "true" : undefined}
+        className={`${baseOption} ${
+          isGameMode
+            ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow"
+            : "text-zinc-400 hover:text-orange-400"
+        }`}
+      >
+        ⚔️ Game
+      </Link>
+    </div>
+  );
+}
 
 export default function NavBar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -90,6 +132,7 @@ export default function NavBar() {
             >
               Contact
             </Link>
+            <ModeToggle className="ml-2 -my-1.5" />
           </nav>
 
           {/* Mobile Hamburger Button */}
@@ -175,6 +218,9 @@ export default function NavBar() {
           >
             Contact
           </Link>
+          <div className="pt-4 px-4">
+            <ModeToggle onNavigate={handleLinkClick} className="w-max" />
+          </div>
         </div>
       </nav>
     </>
