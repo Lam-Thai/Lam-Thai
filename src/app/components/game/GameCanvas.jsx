@@ -63,7 +63,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.touchAction = "none";
     renderer.domElement.style.display = "block";
     container.appendChild(renderer.domElement);
@@ -381,14 +381,15 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     canvas.addEventListener("wheel", onWheel, { passive: false });
 
     // ------------------------------------------------------------ game loop
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     const moveDir = new THREE.Vector3();
     let rafId = 0;
 
     const step = () => {
       rafId = requestAnimationFrame(step);
-      const delta = Math.min(clock.getDelta(), 0.1);
-      const t = clock.elapsedTime;
+      timer.update();
+      const delta = Math.min(timer.getDelta(), 0.1);
+      const t = timer.getElapsed();
 
       // --- movement -------------------------------------------------------
       let fz = 0;
@@ -462,7 +463,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
 
     const startLoop = () => {
       if (!rafId) {
-        clock.getDelta(); // discard time spent hidden
+        timer.reset(); // discard time spent hidden
         rafId = requestAnimationFrame(step);
       }
     };
