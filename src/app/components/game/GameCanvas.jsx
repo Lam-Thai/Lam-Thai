@@ -2,6 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import {
   MILESTONES,
   LANDMARKS,
@@ -15,14 +19,26 @@ import {
   createKnight,
   createMountain,
   createRock,
-  createRng,
   createSignboard,
-  createTree,
   createWindmill,
-  terrainHeight,
 } from "./world";
+import {
+  createRng,
+  terrainHeight,
+  waterLevelAt,
+  distanceToWater,
+  buildTerrainMesh,
+} from "./terrain";
+import {
+  setupSky,
+  createRiverWater,
+  createWaterfall,
+  createVegetation,
+  createButterflies,
+  createBirds,
+} from "./environment";
 
-const SKY_COLOR = 0x9ecbe8;
+const FOG_COLOR = 0xc7dcec;
 const WALK_SPEED = 9;
 const RUN_SPEED = 15;
 const MOUNTAIN_KEEP_OUT = 38;
@@ -49,57 +65,69 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
 
     // ---------------------------------------------------------------- scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(SKY_COLOR);
-    scene.fog = new THREE.Fog(SKY_COLOR, 70, 280);
+    scene.fog = new THREE.Fog(FOG_COLOR, 80, 340);
 
     const camera = new THREE.PerspectiveCamera(
       55,
       container.clientWidth / Math.max(container.clientHeight, 1),
       0.1,
-      600
+      4000
     );
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.68;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.touchAction = "none";
     renderer.domElement.style.display = "block";
     container.appendChild(renderer.domElement);
 
-    // --------------------------------------------------------------- lights
-    scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x4a6a3a, 0.9));
-    const sun = new THREE.DirectionalLight(0xfff2d8, 1.6);
-    sun.position.set(60, 90, 40);
+    // -------------------------------------------- sky, IBL ambient + lights
+    const sky = setupSky(renderer, scene);
+
+    scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x54703f, 0.5));
+    const sun = new THREE.DirectionalLight(0xfff0d6, 3.4);
+    sun.position.copy(sky.sunDir).multiplyScalar(120);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -130;
-    sun.shadow.camera.right = 130;
-    sun.shadow.camera.top = 130;
-    sun.shadow.camera.bottom = -130;
-    sun.shadow.camera.far = 300;
+    sun.shadow.camera.left = -140;
+    sun.shadow.camera.right = 140;
+    sun.shadow.camera.top = 140;
+    sun.shadow.camera.bottom = -140;
+    sun.shadow.camera.far = 400;
     sun.shadow.bias = -0.0004;
+    sun.shadow.radius = 3;
     scene.add(sun);
 
-    // -------------------------------------------------------------- terrain
-    const groundGeo = new THREE.PlaneGeometry(360, 360, 96, 96);
-    groundGeo.rotateX(-Math.PI / 2);
-    const pos = groundGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      pos.setY(i, terrainHeight(pos.getX(i), pos.getZ(i)));
-    }
-    groundGeo.computeVertexNormals();
-    const ground = new THREE.Mesh(
-      groundGeo,
-      new THREE.MeshStandardMaterial({
-        color: 0x5da24a,
-        flatShading: true,
-        roughness: 1,
-      })
+    // ------------------------------------------------------ post-processing
+    const composer = new EffectComposer(renderer);
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(
+      new THREE.Vector2(container.clientWidth, container.clientHeight),
+      0.25,
+      0.55,
+      0.82
     );
-    ground.receiveShadow = true;
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+
+    // -------------------------------------------------------------- terrain
+    const ground = buildTerrainMesh();
     scene.add(ground);
+
+    // ------------------------------------------------------ water + wildlife
+    const river = createRiverWater();
+    scene.add(river.group);
+    const waterfall = createWaterfall();
+    scene.add(waterfall.group);
+    const butterflies = createButterflies();
+    scene.add(butterflies.group);
+    const birds = createBirds();
+    scene.add(birds.group);
 
     const placeOnGround = (object, x, z, lift = 0) => {
       object.position.set(x, terrainHeight(x, z) + lift, z);
@@ -179,26 +207,44 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       { x: wx, z: wz, r: 10 },
       { x: mx, z: mz, r: 46 },
       { x: PLAYER_SPAWN[0], z: PLAYER_SPAWN[1], r: 8 },
+      // hamlet houses (placed below)
+      { x: -8, z: 16, r: 5 },
+      { x: 9, z: 18, r: 5 },
+      { x: -20, z: -6, r: 5 },
+      { x: 22, z: -4, r: 5 },
     ];
     const isClear = (x, z) =>
       keepOut.every((k) => (x - k.x) ** 2 + (z - k.z) ** 2 > k.r * k.r);
 
-    for (let i = 0; i < 70; i++) {
-      const x = (rng() - 0.5) * 2 * (WORLD_RADIUS - 6);
-      const z = (rng() - 0.5) * 2 * (WORLD_RADIUS - 6);
-      if (!isClear(x, z)) continue;
-      const tree = createTree(rng);
-      placeOnGround(tree, x, z, -0.1);
-      tree.rotation.y = rng() * Math.PI * 2;
-      scene.add(tree);
-    }
-    for (let i = 0; i < 14; i++) {
+    const vegetation = createVegetation(isClear, WORLD_RADIUS - 6);
+    scene.add(vegetation.group);
+    updaters.push(
+      vegetation.update,
+      river.update,
+      waterfall.update,
+      butterflies.update,
+      birds.update
+    );
+
+    for (let i = 0; i < 16; i++) {
       const x = (rng() - 0.5) * 2 * (WORLD_RADIUS - 10);
       const z = (rng() - 0.5) * 2 * (WORLD_RADIUS - 10);
-      if (!isClear(x, z)) continue;
+      if (!isClear(x, z) || distanceToWater(x, z) < 3) continue;
       const rock = createRock(rng);
       placeOnGround(rock, x, z, 0.1);
       scene.add(rock);
+    }
+
+    // Stepping stones across the ford toward the western knight.
+    for (let i = 0; i < 5; i++) {
+      const x = -34.5 + i * 2.1;
+      const z = -16;
+      const stone = createRock(rng);
+      stone.scale.setScalar(1.15 + rng() * 0.25);
+      stone.scale.y *= 0.6;
+      stone.position.set(x, waterLevelAt(x, z) + 0.15, z);
+      stone.rotation.y = rng() * Math.PI;
+      scene.add(stone);
     }
     // A little hamlet near the spawn to sell the medieval vibe.
     for (const [hx, hz] of [
@@ -218,9 +264,10 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       const cloud = createCloud(rng);
       cloud.position.set(
         (rng() - 0.5) * 320,
-        34 + rng() * 16,
+        42 + rng() * 20,
         (rng() - 0.5) * 320
       );
+      cloud.scale.setScalar(1.3 + rng() * 0.9);
       cloud.userData.speed = 0.9 + rng() * 1.3;
       scene.add(cloud);
       clouds.push(cloud);
@@ -458,7 +505,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       }
 
       updateCamera(delta);
-      renderer.render(scene, camera);
+      composer.render(delta);
     };
 
     const startLoop = () => {
@@ -487,6 +534,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       camera.aspect = clientWidth / clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(clientWidth, clientHeight);
+      composer.setSize(clientWidth, clientHeight);
     });
     resizeObserver.observe(container);
 
@@ -504,7 +552,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       canvas.removeEventListener("wheel", onWheel);
 
       scene.traverse((object) => {
-        if (object.isMesh) {
+        if (object.isMesh || object.isPoints) {
           object.geometry?.dispose();
           const materials = Array.isArray(object.material)
             ? object.material
@@ -515,6 +563,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
           }
         }
       });
+      sky.dispose();
+      composer.dispose();
       renderer.dispose();
       if (canvas.parentNode === container) container.removeChild(canvas);
     };

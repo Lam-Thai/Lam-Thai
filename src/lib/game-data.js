@@ -27,7 +27,8 @@ export const MILESTONES = [
     subtitle: "Next.js 15 · Stripe · Clerk",
     character: "knight",
     href: "/work/landly",
-    position: [-32, -22],
+    // West of the river — reached via the stepping-stone ford.
+    position: [-48, -26],
   },
   {
     id: "tandem",
