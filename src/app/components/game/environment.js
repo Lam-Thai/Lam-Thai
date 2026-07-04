@@ -47,7 +47,7 @@ export function setupSky(renderer, scene) {
 
   scene.add(sky); // visible backdrop
   scene.environment = envTarget.texture;
-  scene.environmentIntensity = 0.55;
+  scene.environmentIntensity = 0.4;
 
   return {
     sunDir,

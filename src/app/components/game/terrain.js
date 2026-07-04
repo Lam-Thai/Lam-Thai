@@ -200,9 +200,12 @@ export function buildTerrainMesh() {
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geometry.computeVertexNormals();
 
+  const detail = makeGroundDetailTexture();
   const material = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    map: makeGroundDetailTexture(),
+    map: detail,
+    bumpMap: detail,
+    bumpScale: 0.35,
     roughness: 0.95,
     metalness: 0,
   });

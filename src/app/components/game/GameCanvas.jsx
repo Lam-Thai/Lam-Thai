@@ -78,7 +78,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.68;
+    renderer.toneMappingExposure = 0.52;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.touchAction = "none";
@@ -88,8 +88,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     // -------------------------------------------- sky, IBL ambient + lights
     const sky = setupSky(renderer, scene);
 
-    scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x54703f, 0.5));
-    const sun = new THREE.DirectionalLight(0xfff0d6, 3.4);
+    scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x54703f, 0.35));
+    const sun = new THREE.DirectionalLight(0xffedd0, 2.0);
     sun.position.copy(sky.sunDir).multiplyScalar(120);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -108,9 +108,9 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     composer.addPass(new RenderPass(scene, camera));
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(container.clientWidth, container.clientHeight),
-      0.25,
-      0.55,
-      0.82
+      0.14,
+      0.5,
+      0.88
     );
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
