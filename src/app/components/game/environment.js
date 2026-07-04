@@ -1,6 +1,7 @@
-// Atmosphere, water and vegetation for the game world.
-// Everything is procedural: physical sky + IBL, an animated PBR river fed by
-// a mountain waterfall, and instanced wind-swayed vegetation.
+// Atmosphere, water, vegetation and ambient life for the game world.
+// Everything is procedural: a golden-hour physical sky baked into IBL, an
+// animated PBR river fed by a mountain waterfall, varied instanced flora
+// and painted-wing butterflies + dusk fireflies.
 
 import * as THREE from "three";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
@@ -10,27 +11,29 @@ import {
   terrainHeight,
   waterLevelAt,
   distanceToWater,
+  distanceToTrail,
   RIVER_PATH,
   RIVER_WATER_HALF_WIDTH,
   PLUNGE_POOL,
 } from "./terrain";
 
 // ---------------------------------------------------------------------------
-// Sky + image-based lighting. Returns the sun direction so the shadow light
-// can be aligned with the visible sun, plus a dispose() for the env texture.
+// Sunset sky + image-based lighting. Returns the sun direction so the shadow
+// light can be aligned with the visible sun, plus dispose() for the env map.
 // ---------------------------------------------------------------------------
 export function setupSky(renderer, scene) {
   const sky = new Sky();
   sky.scale.setScalar(2000);
 
   const uniforms = sky.material.uniforms;
-  uniforms.turbidity.value = 6;
-  uniforms.rayleigh.value = 1.6;
-  uniforms.mieCoefficient.value = 0.004;
-  uniforms.mieDirectionalG.value = 0.75;
+  uniforms.turbidity.value = 10;
+  uniforms.rayleigh.value = 3.1;
+  uniforms.mieCoefficient.value = 0.008;
+  uniforms.mieDirectionalG.value = 0.8;
 
-  const elevation = THREE.MathUtils.degToRad(38);
-  const azimuth = THREE.MathUtils.degToRad(135);
+  // Low western sun for golden hour.
+  const elevation = THREE.MathUtils.degToRad(13);
+  const azimuth = THREE.MathUtils.degToRad(235);
   const sunDir = new THREE.Vector3(
     Math.cos(elevation) * Math.sin(azimuth),
     Math.sin(elevation),
@@ -47,7 +50,7 @@ export function setupSky(renderer, scene) {
 
   scene.add(sky); // visible backdrop
   scene.environment = envTarget.texture;
-  scene.environmentIntensity = 0.4;
+  scene.environmentIntensity = 0.35;
 
   return {
     sunDir,
@@ -56,17 +59,17 @@ export function setupSky(renderer, scene) {
 }
 
 // ---------------------------------------------------------------------------
-// Water material: MeshStandardMaterial (so it picks up sky reflections) with
+// Water material: MeshStandardMaterial (so it picks up the sunset sky) with
 // procedural wave normals injected via onBeforeCompile.
 // ---------------------------------------------------------------------------
 export function createWaterMaterial() {
   const material = new THREE.MeshStandardMaterial({
-    color: 0x1e5f76,
+    color: 0x1c4657,
     roughness: 0.08,
     metalness: 0,
     transparent: true,
     opacity: 0.86,
-    envMapIntensity: 1.4,
+    envMapIntensity: 1.5,
   });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = { value: 0 };
@@ -193,8 +196,6 @@ export function createWaterfall() {
   const group = new THREE.Group();
 
   const poolY = waterLevelAt(PLUNGE_POOL.x, PLUNGE_POOL.z);
-  // Direction from the pool toward the mountain centre — the fall leans back
-  // onto the mountain flank.
   const toMountain = new THREE.Vector2(0 - PLUNGE_POOL.x, -122 - PLUNGE_POOL.z).normalize();
   const bottom = new THREE.Vector3(
     PLUNGE_POOL.x + toMountain.x * 4.5,
@@ -227,16 +228,16 @@ export function createWaterfall() {
         float streaks = 0.5 + 0.5 * sin(flow + sin(vUv.x * 22.0 + vUv.y * 6.0) * 1.8);
         float ripple = 0.6 + 0.4 * sin(vUv.x * 34.0 + sin(vUv.y * 20.0 - uTime * 5.0) * 2.0);
         float edge = smoothstep(0.0, 0.14, vUv.x) * smoothstep(1.0, 0.86, vUv.x);
-        float head = smoothstep(1.0, 0.92, vUv.y);         // soft top
-        float footFoam = smoothstep(0.22, 0.0, vUv.y) * 0.8; // churn at bottom
+        float head = smoothstep(1.0, 0.92, vUv.y);
+        float footFoam = smoothstep(0.22, 0.0, vUv.y) * 0.8;
         float alpha = clamp(streaks * ripple * 0.75 + footFoam, 0.0, 1.0) * edge * head;
-        vec3 color = mix(vec3(0.62, 0.78, 0.86), vec3(1.0), streaks * 0.6 + footFoam);
+        // warm dusk tint on the spray
+        vec3 color = mix(vec3(0.6, 0.66, 0.72), vec3(1.0, 0.93, 0.85), streaks * 0.6 + footFoam);
         gl_FragColor = vec4(color, alpha * 0.85);
       }
     `,
   });
 
-  // Ribbon strip between bottom and top with a slight outward bulge.
   const widthDir = new THREE.Vector3(-toMountain.y, 0, toMountain.x);
   const rows = 10;
   const halfWidth = 2.6;
@@ -247,7 +248,6 @@ export function createWaterfall() {
   for (let i = 0; i <= rows; i++) {
     const t = i / rows;
     point.lerpVectors(bottom, top, t);
-    // Bulge away from the rock mid-fall.
     const bulge = Math.sin(t * Math.PI) * 1.1;
     point.x -= toMountain.x * bulge;
     point.z -= toMountain.y * bulge;
@@ -271,8 +271,8 @@ export function createWaterfall() {
 
   // Wet rocks framing the fall.
   const rockMat = new THREE.MeshStandardMaterial({
-    color: 0x5d5f66,
-    roughness: 0.55,
+    color: 0x55575e,
+    roughness: 0.5,
     flatShading: true,
   });
   const rng = createRng(4242);
@@ -310,7 +310,7 @@ export function createWaterfall() {
     map: makeSoftSpriteTexture(),
     size: 4.2,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.28,
     depthWrite: false,
   });
   const mist = new THREE.Points(mistGeo, mistMaterial);
@@ -332,7 +332,8 @@ export function createWaterfall() {
 }
 
 // ---------------------------------------------------------------------------
-// Vegetation: instanced trees, grass, flowers and riverside reeds.
+// Vegetation: varied instanced trees (pine, oak, birch, dead), grass,
+// flowers, bushes, mushrooms and riverside reeds.
 // ---------------------------------------------------------------------------
 function makeGrassTexture(withFlowers) {
   const size = 128;
@@ -345,8 +346,8 @@ function makeGrassTexture(withFlowers) {
     const baseX = 12 + rng() * 104;
     const lean = (rng() - 0.5) * 40;
     const height = 60 + rng() * 60;
-    const shade = 70 + rng() * 60;
-    ctx.strokeStyle = `rgb(${30 + rng() * 30}, ${shade + 60}, ${40 + rng() * 20})`;
+    // muted olive blades for golden hour
+    ctx.strokeStyle = `rgb(${58 + rng() * 34}, ${96 + rng() * 42}, ${38 + rng() * 22})`;
     ctx.lineWidth = 3.5 + rng() * 2.5;
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -355,7 +356,7 @@ function makeGrassTexture(withFlowers) {
     ctx.stroke();
   }
   if (withFlowers) {
-    const petals = ["#e8608a", "#f5f0dc", "#e8b23c", "#b678d9"];
+    const petals = ["#d9678a", "#e8dfc4", "#d9a23c", "#a06cc4"];
     for (let i = 0; i < 5; i++) {
       const x = 16 + rng() * 96;
       const y = 20 + rng() * 46;
@@ -366,7 +367,7 @@ function makeGrassTexture(withFlowers) {
         ctx.arc(x + Math.cos(a) * 4, y + Math.sin(a) * 4, 3.4, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.fillStyle = "#f2c84b";
+      ctx.fillStyle = "#e0b83c";
       ctx.beginPath();
       ctx.arc(x, y, 2.6, 0, Math.PI * 2);
       ctx.fill();
@@ -374,6 +375,26 @@ function makeGrassTexture(withFlowers) {
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+// Birch bark: pale trunk with dark horizontal lenticels.
+function makeBirchTexture() {
+  const rng = createRng(88);
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ded8cc";
+  ctx.fillRect(0, 0, 64, 128);
+  for (let i = 0; i < 22; i++) {
+    ctx.fillStyle = `rgba(40,36,32,${0.5 + rng() * 0.4})`;
+    ctx.fillRect(rng() * 64, rng() * 128, 6 + rng() * 16, 2 + rng() * 3);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
   return texture;
 }
 
@@ -408,7 +429,7 @@ function crossedQuadGeometry(width, height) {
 }
 
 // Scatters everything. `isClear(x, z)` guards milestones/landmarks/houses;
-// water proximity is handled internally.
+// water and trail proximity are handled internally.
 export function createVegetation(isClear, worldRadius) {
   const group = new THREE.Group();
   const rng = createRng(90210);
@@ -416,29 +437,33 @@ export function createVegetation(isClear, worldRadius) {
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
 
-  const scatter = (count, minWater, maxTries, place) => {
+  const scatter = (count, minWater, maxTries, place, minTrail = 2.4) => {
     let placed = 0;
     for (let i = 0; i < maxTries && placed < count; i++) {
       const x = (rng() - 0.5) * 2 * worldRadius;
       const z = (rng() - 0.5) * 2 * worldRadius;
       if (!isClear(x, z)) continue;
       if (distanceToWater(x, z) < minWater) continue;
+      if (distanceToTrail(x, z) < minTrail) continue;
       place(x, z, placed);
       placed++;
     }
     return placed;
   };
 
-  const setInstance = (meshes, index, x, z, scale, rotY) => {
+  // Trees get a random lean so the forest doesn't look stamped.
+  const setInstance = (meshes, index, x, z, scale, rotY, lean = 0) => {
     dummy.position.set(x, terrainHeight(x, z) - 0.06, z);
     dummy.scale.setScalar(scale);
-    dummy.rotation.set(0, rotY, 0);
+    dummy.rotation.set(lean, rotY, lean * 0.6);
     dummy.updateMatrix();
     for (const m of meshes) m.setMatrixAt(index, dummy.matrix);
   };
 
-  // ------ pines (trunk + 3 stacked canopies as one merged canopy geometry)
-  const PINES = 80;
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x594031, roughness: 0.95 });
+
+  // ------ pines
+  const PINES = 70;
   const pineTrunkGeo = new THREE.CylinderGeometry(0.16, 0.3, 2.4, 7);
   pineTrunkGeo.translate(0, 1.2, 0);
   const cone1 = new THREE.ConeGeometry(1.7, 2.4, 9);
@@ -448,8 +473,6 @@ export function createVegetation(isClear, worldRadius) {
   const cone3 = new THREE.ConeGeometry(0.85, 1.8, 9);
   cone3.translate(0, 5.6, 0);
   const pineCanopyGeo = mergeGeometries([cone1, cone2, cone3]);
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5d3f28, roughness: 0.95 });
-  // White base color: per-instance tints carry the hue.
   const pineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
   const pineTrunks = new THREE.InstancedMesh(pineTrunkGeo, trunkMat, PINES);
   const pineCanopies = new THREE.InstancedMesh(pineCanopyGeo, pineMat, PINES);
@@ -458,16 +481,20 @@ export function createVegetation(isClear, worldRadius) {
   pineCanopies.receiveShadow = true;
 
   const pinesPlaced = scatter(PINES, 5.5, PINES * 30, (x, z, i) => {
-    setInstance([pineTrunks, pineCanopies], i, x, z, 0.85 + rng() * 0.8, rng() * Math.PI * 2);
-    tint.setHSL(0.33 + rng() * 0.05, 0.42 + rng() * 0.18, 0.28 + rng() * 0.1);
+    setInstance(
+      [pineTrunks, pineCanopies], i, x, z,
+      0.7 + rng() * 1.1, rng() * Math.PI * 2, (rng() - 0.5) * 0.1
+    );
+    // dusky green with occasional blue-fir tone
+    tint.setHSL(0.3 + rng() * 0.13, 0.32 + rng() * 0.2, 0.24 + rng() * 0.12);
     pineCanopies.setColorAt(i, tint);
   });
   pineTrunks.count = pinesPlaced;
   pineCanopies.count = pinesPlaced;
   group.add(pineTrunks, pineCanopies);
 
-  // ------ oaks (trunk + blob canopy)
-  const OAKS = 45;
+  // ------ oaks (some turned autumn-gold for the sunset palette)
+  const OAKS = 40;
   const oakTrunkGeo = new THREE.CylinderGeometry(0.22, 0.4, 2.1, 7);
   oakTrunkGeo.translate(0, 1.05, 0);
   const blob1 = new THREE.IcosahedronGeometry(1.6, 1);
@@ -485,13 +512,108 @@ export function createVegetation(isClear, worldRadius) {
   oakCanopies.receiveShadow = true;
 
   const oaksPlaced = scatter(OAKS, 5.5, OAKS * 30, (x, z, i) => {
-    setInstance([oakTrunks, oakCanopies], i, x, z, 0.8 + rng() * 0.7, rng() * Math.PI * 2);
-    tint.setHSL(0.28 + rng() * 0.07, 0.45 + rng() * 0.15, 0.3 + rng() * 0.1);
+    setInstance(
+      [oakTrunks, oakCanopies], i, x, z,
+      0.7 + rng() * 0.9, rng() * Math.PI * 2, (rng() - 0.5) * 0.12
+    );
+    if (rng() > 0.6) {
+      // autumn: amber → rust
+      tint.setHSL(0.06 + rng() * 0.06, 0.6 + rng() * 0.2, 0.34 + rng() * 0.1);
+    } else {
+      tint.setHSL(0.24 + rng() * 0.09, 0.4 + rng() * 0.15, 0.28 + rng() * 0.1);
+    }
     oakCanopies.setColorAt(i, tint);
   });
   oakTrunks.count = oaksPlaced;
   oakCanopies.count = oaksPlaced;
   group.add(oakTrunks, oakCanopies);
+
+  // ------ birches: pale bark, small airy canopy
+  const BIRCHES = 22;
+  const birchTrunkGeo = new THREE.CylinderGeometry(0.09, 0.15, 3.4, 7);
+  birchTrunkGeo.translate(0, 1.7, 0);
+  const birchBlob1 = new THREE.IcosahedronGeometry(1.0, 1);
+  birchBlob1.translate(0, 3.7, 0);
+  const birchBlob2 = new THREE.IcosahedronGeometry(0.7, 1);
+  birchBlob2.translate(0.55, 3.1, 0.2);
+  const birchCanopyGeo = mergeGeometries([birchBlob1, birchBlob2]);
+  const birchTrunkMat = new THREE.MeshStandardMaterial({
+    map: makeBirchTexture(),
+    roughness: 0.85,
+  });
+  const birchMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+  const birchTrunks = new THREE.InstancedMesh(birchTrunkGeo, birchTrunkMat, BIRCHES);
+  const birchCanopies = new THREE.InstancedMesh(birchCanopyGeo, birchMat, BIRCHES);
+  birchTrunks.castShadow = true;
+  birchCanopies.castShadow = true;
+
+  const birchesPlaced = scatter(BIRCHES, 5, BIRCHES * 30, (x, z, i) => {
+    setInstance(
+      [birchTrunks, birchCanopies], i, x, z,
+      0.8 + rng() * 0.6, rng() * Math.PI * 2, (rng() - 0.5) * 0.14
+    );
+    // golden birch foliage
+    tint.setHSL(0.11 + rng() * 0.05, 0.55 + rng() * 0.2, 0.42 + rng() * 0.12);
+    birchCanopies.setColorAt(i, tint);
+  });
+  birchTrunks.count = birchesPlaced;
+  birchCanopies.count = birchesPlaced;
+  group.add(birchTrunks, birchCanopies);
+
+  // ------ dead trees: bare silhouettes for mood
+  const DEADS = 10;
+  const deadTrunk = new THREE.CylinderGeometry(0.12, 0.24, 3.2, 6);
+  deadTrunk.translate(0, 1.6, 0);
+  const branchGeo = new THREE.CylinderGeometry(0.05, 0.09, 1.5, 5);
+  const branch1 = branchGeo.clone();
+  branch1.translate(0, 0.75, 0);
+  branch1.rotateZ(0.8);
+  branch1.translate(0.1, 2.2, 0);
+  const branch2 = branchGeo.clone();
+  branch2.scale(0.8, 0.8, 0.8);
+  branch2.translate(0, 0.6, 0);
+  branch2.rotateZ(-0.9);
+  branch2.rotateY(0.7);
+  branch2.translate(-0.05, 2.7, 0.05);
+  const deadGeo = mergeGeometries([deadTrunk, branch1, branch2]);
+  const deadMat = new THREE.MeshStandardMaterial({ color: 0x4d4238, roughness: 1 });
+  const deads = new THREE.InstancedMesh(deadGeo, deadMat, DEADS);
+  deads.castShadow = true;
+  deads.count = scatter(DEADS, 4, DEADS * 30, (x, z, i) => {
+    setInstance([deads], i, x, z, 0.8 + rng() * 0.8, rng() * Math.PI * 2, (rng() - 0.5) * 0.2);
+  });
+  group.add(deads);
+
+  // ------ bushes
+  const BUSHES = 40;
+  const bushGeo = new THREE.IcosahedronGeometry(0.7, 1);
+  bushGeo.translate(0, 0.45, 0);
+  bushGeo.scale(1, 0.75, 1);
+  const bushMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
+  const bushes = new THREE.InstancedMesh(bushGeo, bushMat, BUSHES);
+  bushes.castShadow = true;
+  bushes.count = scatter(BUSHES, 2.5, BUSHES * 12, (x, z, i) => {
+    setInstance([bushes], i, x, z, 0.7 + rng() * 1.0, rng() * Math.PI * 2);
+    tint.setHSL(0.22 + rng() * 0.12, 0.35 + rng() * 0.2, 0.26 + rng() * 0.1);
+    bushes.setColorAt(i, tint);
+  });
+  group.add(bushes);
+
+  // ------ mushrooms clustered in the shade
+  const SHROOMS = 30;
+  const stemGeo = new THREE.CylinderGeometry(0.05, 0.07, 0.22, 6);
+  stemGeo.translate(0, 0.11, 0);
+  const capGeo = new THREE.SphereGeometry(0.14, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+  capGeo.translate(0, 0.2, 0);
+  const shroomGeo = mergeGeometries([stemGeo, capGeo]);
+  const shroomMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+  const shrooms = new THREE.InstancedMesh(shroomGeo, shroomMat, SHROOMS);
+  shrooms.count = scatter(SHROOMS, 3, SHROOMS * 12, (x, z, i) => {
+    setInstance([shrooms], i, x, z, 0.8 + rng() * 1.2, rng() * Math.PI * 2);
+    tint.setHSL(rng() > 0.5 ? 0.02 : 0.08, 0.55 + rng() * 0.25, 0.4 + rng() * 0.15);
+    shrooms.setColorAt(i, tint);
+  });
+  group.add(shrooms);
 
   // ------ grass tufts + flowers (crossed alpha-tested quads, wind swayed)
   const grassGeo = crossedQuadGeometry(1.1, 0.85);
@@ -507,7 +629,7 @@ export function createVegetation(isClear, worldRadius) {
   const grass = new THREE.InstancedMesh(grassGeo, grassMat, GRASS);
   grass.count = scatter(GRASS, 1.2, GRASS * 8, (x, z, i) => {
     setInstance([grass], i, x, z, 0.7 + rng() * 0.9, rng() * Math.PI);
-  });
+  }, 1.6);
   group.add(grass);
 
   const flowerGeo = crossedQuadGeometry(1.0, 0.8);
@@ -529,7 +651,7 @@ export function createVegetation(isClear, worldRadius) {
   // ------ reeds hugging the riverbank
   const reedGeo = new THREE.ConeGeometry(0.055, 1.9, 5);
   reedGeo.translate(0, 0.95, 0);
-  const reedMat = new THREE.MeshStandardMaterial({ color: 0x5c7a3a, roughness: 0.95 });
+  const reedMat = new THREE.MeshStandardMaterial({ color: 0x5c7040, roughness: 0.95 });
   addWindSway(reedMat, 0.16);
   timeMaterials.push(reedMat);
   const REEDS = 140;
@@ -569,39 +691,135 @@ export function createVegetation(isClear, worldRadius) {
 }
 
 // ---------------------------------------------------------------------------
-// Ambient life: butterflies near the meadow, birds circling overhead.
+// Butterflies: shaped, patterned wings with a body and antennae, wandering
+// organically and flapping at rest-realistic rates.
 // ---------------------------------------------------------------------------
+function makeWingTexture(baseHue) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  const rng = createRng(Math.floor(baseHue * 997) + 13);
+
+  const base = new THREE.Color().setHSL(baseHue, 0.72, 0.52);
+  const deep = new THREE.Color().setHSL(baseHue, 0.8, 0.3);
+  const gradient = ctx.createLinearGradient(0, 0, 128, 128);
+  gradient.addColorStop(0, `#${base.getHexString()}`);
+  gradient.addColorStop(1, `#${deep.getHexString()}`);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+
+  // dark veins radiating from the wing root (bottom-left of the texture)
+  ctx.strokeStyle = "rgba(25,15,10,0.55)";
+  ctx.lineWidth = 2.5;
+  for (let i = 0; i < 6; i++) {
+    const a = 0.15 + (i / 6) * 1.25;
+    ctx.beginPath();
+    ctx.moveTo(4, 124);
+    ctx.quadraticCurveTo(
+      50 + Math.cos(a) * 20, 90 - Math.sin(a) * 30,
+      10 + Math.cos(a) * 130, 124 - Math.sin(a) * 130
+    );
+    ctx.stroke();
+  }
+  // pale spots near the outer edge
+  ctx.fillStyle = "rgba(255,245,225,0.85)";
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.arc(78 + rng() * 40, 28 + rng() * 44, 3 + rng() * 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // dark scalloped border
+  ctx.strokeStyle = "rgba(20,12,8,0.9)";
+  ctx.lineWidth = 7;
+  ctx.strokeRect(0, 0, 128, 128);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function butterflyWingGeometry() {
+  // Fore + hind wing lobes, root at the origin, spanning +x.
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0.02);
+  shape.bezierCurveTo(0.12, 0.2, 0.34, 0.28, 0.42, 0.14);
+  shape.bezierCurveTo(0.46, 0.04, 0.32, 0.0, 0.17, -0.01);
+  shape.bezierCurveTo(0.32, -0.06, 0.36, -0.24, 0.2, -0.28);
+  shape.bezierCurveTo(0.07, -0.3, 0.01, -0.12, 0, 0.02);
+  const geometry = new THREE.ShapeGeometry(shape, 10);
+  // Remap UVs to the 0..1 texture space.
+  geometry.computeBoundingBox();
+  const bb = geometry.boundingBox;
+  const uv = geometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++) {
+    uv.setXY(
+      i,
+      (uv.getX(i) - bb.min.x) / (bb.max.x - bb.min.x),
+      (uv.getY(i) - bb.min.y) / (bb.max.y - bb.min.y)
+    );
+  }
+  return geometry;
+}
+
 export function createButterflies() {
   const group = new THREE.Group();
   const rng = createRng(60606);
-  const colors = [0xe8843c, 0x7db6e8, 0xf2e6c8, 0xd9689c];
+  const wingGeo = butterflyWingGeometry();
+  const hues = [0.07, 0.58, 0.12, 0.85, 0.02];
   const items = [];
 
   for (let i = 0; i < 7; i++) {
     const butterfly = new THREE.Group();
-    const material = new THREE.MeshStandardMaterial({
-      color: colors[i % colors.length],
+    const wingMat = new THREE.MeshStandardMaterial({
+      map: makeWingTexture(hues[i % hues.length] + rng() * 0.03),
       side: THREE.DoubleSide,
       roughness: 0.8,
+      transparent: true,
     });
-    const wingGeo = new THREE.PlaneGeometry(0.34, 0.26);
-    wingGeo.translate(0.17, 0, 0);
-    const left = new THREE.Mesh(wingGeo, material);
-    left.rotation.y = Math.PI; // mirror
-    const right = new THREE.Mesh(wingGeo.clone(), material);
-    butterfly.add(left, right);
+
+    const rightPivot = new THREE.Group();
+    const rightWing = new THREE.Mesh(wingGeo, wingMat);
+    rightPivot.add(rightWing);
+    const leftPivot = new THREE.Group();
+    const leftWing = new THREE.Mesh(wingGeo, wingMat);
+    leftWing.scale.x = -1;
+    leftPivot.add(leftWing);
+
+    // Lay wings flat; they flap around the body axis (z).
+    const wings = new THREE.Group();
+    wings.rotation.x = -Math.PI / 2;
+    wings.add(rightPivot, leftPivot);
+
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2e2018, roughness: 0.7 });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.16, 3, 8), bodyMat);
+    body.rotation.x = Math.PI / 2;
+    const headBead = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), bodyMat);
+    headBead.position.set(0, 0, 0.1);
+    const antennaGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.12, 4);
+    for (const side of [-1, 1]) {
+      const antenna = new THREE.Mesh(antennaGeo, bodyMat);
+      antenna.position.set(side * 0.025, 0.04, 0.15);
+      antenna.rotation.x = 0.9;
+      antenna.rotation.z = -side * 0.35;
+      butterfly.add(antenna);
+    }
+
+    butterfly.add(wings, body, headBead);
 
     const cx = (rng() - 0.5) * 90;
     const cz = (rng() - 0.5) * 90 - 10;
     items.push({
       node: butterfly,
-      left,
-      right,
+      leftPivot,
+      rightPivot,
       cx,
       cz,
       radius: 2 + rng() * 4,
       speed: 0.25 + rng() * 0.4,
       phase: rng() * Math.PI * 2,
+      lastX: cx,
+      lastZ: cz,
     });
     group.add(butterfly);
   }
@@ -609,23 +827,83 @@ export function createButterflies() {
   const update = (t) => {
     for (const b of items) {
       const a = t * b.speed + b.phase;
-      const x = b.cx + Math.cos(a) * b.radius;
-      const z = b.cz + Math.sin(a * 1.3) * b.radius;
+      const x = b.cx + Math.cos(a) * b.radius + Math.sin(a * 2.7) * 0.8;
+      const z = b.cz + Math.sin(a * 1.3) * b.radius + Math.cos(a * 3.1) * 0.6;
       b.node.position.set(
         x,
-        terrainHeight(x, z) + 1.3 + Math.sin(t * 2.2 + b.phase) * 0.35,
+        terrainHeight(x, z) + 1.25 + Math.sin(t * 2.2 + b.phase) * 0.35,
         z
       );
-      b.node.rotation.y = -a;
-      const flap = Math.sin(t * 16 + b.phase) * 1.05;
-      b.left.rotation.z = flap;
-      b.right.rotation.z = -flap;
+      // Face the direction of travel.
+      const dx = x - b.lastX;
+      const dz = z - b.lastZ;
+      if (dx * dx + dz * dz > 1e-6) b.node.rotation.y = Math.atan2(dx, dz);
+      b.lastX = x;
+      b.lastZ = z;
+      // Flap: quick strokes with a glide every few beats.
+      const glide = 0.35 + 0.65 * Math.abs(Math.sin(t * 0.8 + b.phase));
+      const flap = Math.sin(t * 15 + b.phase) * 1.0 * glide;
+      b.leftPivot.rotation.y = flap;
+      b.rightPivot.rotation.y = -flap;
     }
   };
 
   return { group, update };
 }
 
+// ---------------------------------------------------------------------------
+// Fireflies drifting over the meadow at dusk.
+// ---------------------------------------------------------------------------
+export function createFireflies() {
+  const rng = createRng(51515);
+  const COUNT = 70;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(COUNT * 3);
+  const anchors = [];
+  for (let i = 0; i < COUNT; i++) {
+    const x = (rng() - 0.5) * 160;
+    const z = (rng() - 0.5) * 160 - 10;
+    const y = terrainHeight(x, z) + 0.6 + rng() * 1.8;
+    anchors.push({ x, y, z, phase: rng() * Math.PI * 2, speed: 0.4 + rng() * 0.6 });
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
+  }
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    map: makeSoftSpriteTexture(),
+    color: 0xffc26b,
+    size: 0.55,
+    transparent: true,
+    opacity: 0.85,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const points = new THREE.Points(geometry, material);
+  points.renderOrder = 3;
+
+  const update = (t) => {
+    const attr = points.geometry.attributes.position;
+    for (let i = 0; i < COUNT; i++) {
+      const a = anchors[i];
+      attr.setXYZ(
+        i,
+        a.x + Math.sin(t * a.speed + a.phase) * 1.2,
+        a.y + Math.sin(t * a.speed * 1.7 + a.phase * 2) * 0.5,
+        a.z + Math.cos(t * a.speed * 0.8 + a.phase) * 1.2
+      );
+    }
+    attr.needsUpdate = true;
+    material.opacity = 0.6 + Math.sin(t * 2.3) * 0.25;
+  };
+
+  return { group: points, update };
+}
+
+// ---------------------------------------------------------------------------
+// Birds circling overhead.
+// ---------------------------------------------------------------------------
 export function createBirds() {
   const group = new THREE.Group();
   const rng = createRng(80808);

@@ -20,6 +20,7 @@ import {
   createMountain,
   createRock,
   createSignboard,
+  createWell,
   createWindmill,
 } from "./world";
 import {
@@ -36,9 +37,11 @@ import {
   createVegetation,
   createButterflies,
   createBirds,
+  createFireflies,
 } from "./environment";
 
-const FOG_COLOR = 0xc7dcec;
+// Warm golden-hour haze.
+const FOG_COLOR = 0xd9a077;
 const WALK_SPEED = 9;
 const RUN_SPEED = 15;
 const MOUNTAIN_KEEP_OUT = 38;
@@ -78,7 +81,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.52;
+    renderer.toneMappingExposure = 0.42;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.touchAction = "none";
@@ -88,8 +91,10 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     // -------------------------------------------- sky, IBL ambient + lights
     const sky = setupSky(renderer, scene);
 
-    scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x54703f, 0.35));
-    const sun = new THREE.DirectionalLight(0xffedd0, 2.0);
+    // Dusky ambient: mauve sky bounce over shadowed ground.
+    scene.add(new THREE.HemisphereLight(0xb78a72, 0x3a4030, 0.3));
+    // Low, warm sun.
+    const sun = new THREE.DirectionalLight(0xff9e58, 1.7);
     sun.position.copy(sky.sunDir).multiplyScalar(120);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -128,6 +133,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     scene.add(butterflies.group);
     const birds = createBirds();
     scene.add(birds.group);
+    const fireflies = createFireflies();
+    scene.add(fireflies.group);
 
     const placeOnGround = (object, x, z, lift = 0) => {
       object.position.set(x, terrainHeight(x, z) + lift, z);
@@ -149,33 +156,36 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     const updaters = [];
 
     // ---------------------------------------------------- milestone characters
-    for (const milestone of MILESTONES) {
+    MILESTONES.forEach((milestone, index) => {
       const build = CHARACTER_BUILDERS[milestone.character];
-      if (!build) continue;
+      if (!build) return;
       const [x, z] = milestone.position;
-
-      const npc = build();
-      placeOnGround(npc.group, x, z);
-      npc.group.userData.baseY = npc.group.position.y;
-      // Face the world center where the player roams.
-      npc.group.rotation.y = Math.atan2(-x, -z) + Math.PI;
-      scene.add(npc.group);
-      updaters.push(npc.update);
-
-      // Signboard between the character and the center of the map.
       const toCenter = Math.atan2(-x, -z);
-      const signDistance = milestone.character === "dragon" ? 5 : 2.6;
-      const signX = x + Math.sin(toCenter) * signDistance;
-      const signZ = z + Math.cos(toCenter) * signDistance;
+
+      // Signboard at the milestone spot, facing the approaching player.
       const board = createSignboard(milestone.title, milestone.subtitle);
-      placeOnGround(board.group, signX, signZ);
+      placeOnGround(board.group, x, z);
       board.group.rotation.y = toCenter;
       scene.add(board.group);
       registerInteractable(board.panel, {
         href: milestone.href,
         title: milestone.title,
       });
-    }
+
+      // Character stands beside the board (alternating sides), facing the
+      // same way as the sign — like a herald presenting their quest.
+      const side = index % 2 === 0 ? 1 : -1;
+      const gap = milestone.character === "dragon" ? 4.6 : 2.4;
+      const nx = x + Math.sin(toCenter + (Math.PI / 2) * side) * gap;
+      const nz = z + Math.cos(toCenter + (Math.PI / 2) * side) * gap;
+      const npc = build(index + 1);
+      placeOnGround(npc.group, nx, nz);
+      npc.group.userData.baseY = npc.group.position.y;
+      npc.group.rotation.y = toCenter;
+      npc.group.userData.homeYaw = toCenter;
+      scene.add(npc.group);
+      updaters.push(npc.update);
+    });
 
     // -------------------------------------------------------------- windmill
     const windmill = createWindmill(LANDMARKS.windmill.label.split("\n"));
@@ -207,11 +217,12 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       { x: wx, z: wz, r: 10 },
       { x: mx, z: mz, r: 46 },
       { x: PLAYER_SPAWN[0], z: PLAYER_SPAWN[1], r: 8 },
-      // hamlet houses (placed below)
+      // hamlet houses + well (placed below)
       { x: -8, z: 16, r: 5 },
       { x: 9, z: 18, r: 5 },
       { x: -20, z: -6, r: 5 },
       { x: 22, z: -4, r: 5 },
+      { x: 6, z: 9, r: 4 },
     ];
     const isClear = (x, z) =>
       keepOut.every((k) => (x - k.x) ** 2 + (z - k.z) ** 2 > k.r * k.r);
@@ -223,8 +234,15 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       river.update,
       waterfall.update,
       butterflies.update,
-      birds.update
+      birds.update,
+      fireflies.update
     );
+
+    // Village well beside the trail.
+    const well = createWell();
+    placeOnGround(well, 6, 9);
+    well.rotation.y = 0.6;
+    scene.add(well);
 
     for (let i = 0; i < 16; i++) {
       const x = (rng() - 0.5) * 2 * (WORLD_RADIUS - 10);
@@ -498,7 +516,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       player.update(t, playerState.walk);
 
       // --- world animation --------------------------------------------------
-      for (const update of updaters) update(t, delta);
+      // NPC updates receive the player position for look-at behaviour.
+      for (const update of updaters) update(t, delta, player.group.position);
       for (const cloud of clouds) {
         cloud.position.x += cloud.userData.speed * delta;
         if (cloud.position.x > 180) cloud.position.x = -180;

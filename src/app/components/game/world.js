@@ -1,6 +1,9 @@
 // Procedural builders for the medieval game world: characters, structures
 // and props. Sculpted from lathe profiles, capsules and displaced spheres
 // with canvas-painted color/bump maps — no external 3D assets.
+//
+// Every character takes a numeric seed so villagers, knights and creatures
+// each get their own face, build, palette and idle behaviour.
 
 import * as THREE from "three";
 import { createRng, fbm } from "./terrain";
@@ -10,16 +13,19 @@ export const COLORS = {
   stone: 0x8d8d94,
   wood: 0x9c7448,
   woodDark: 0x6b4a2c,
-  cloth: 0xa8432e,
-  steel: 0xaab2bc,
-  steelDark: 0x707a85,
+  cloth: 0x8e3a28,
+  steel: 0xa2aab4,
+  steelDark: 0x6d7681,
   gold: 0xc9982e,
-  skin: 0xe0b189,
   monster: 0x679c3d,
-  dragon: 0x8e2d22,
-  dragonWing: 0xb35a35,
-  sail: 0xe4d9bd,
+  dragon: 0x7e2a1e,
+  dragonWing: 0xa8542f,
+  sail: 0xded2b4,
 };
+
+const SKIN_TONES = [0xf0c9a0, 0xe0b189, 0xd9a06b, 0xc98a5b, 0xa8764f];
+const HAIR_TONES = [0x2e2018, 0x5a3d22, 0x8a5a2c, 0xb08d54, 0x757575];
+const TUNIC_TONES = [0x74659c, 0x5c7a4a, 0x9c5a3c, 0x4a6a8a, 0x8a4a5c, 0x6b5a3c];
 
 function mat(color, options = {}) {
   return new THREE.MeshStandardMaterial({
@@ -78,6 +84,23 @@ function organicSphere(radius, material, { bump = 0.1, seed = 0, detail = 2.4 } 
   return m;
 }
 
+// Smoothly turn a group's yaw toward the player when they are close,
+// otherwise back to the home yaw. Gives NPCs a lifelike awareness.
+function facePlayer(group, delta, playerPos, range = 9, rate = 3) {
+  const home = group.userData.homeYaw;
+  if (home === undefined) return;
+  let target = home;
+  if (playerPos) {
+    const dx = playerPos.x - group.position.x;
+    const dz = playerPos.z - group.position.z;
+    if (dx * dx + dz * dz < range * range) target = Math.atan2(dx, dz);
+  }
+  let d = target - group.rotation.y;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  group.rotation.y += d * Math.min(1, (delta || 0.016) * rate);
+}
+
 // ---------------------------------------------------------------------------
 // Canvas textures: color maps and grayscale bump maps for surface detail.
 // ---------------------------------------------------------------------------
@@ -103,7 +126,6 @@ function drawNoise(ctx, size, rng, alpha) {
   }
 }
 
-// Grayscale bumps (three.js reads luminance).
 function makeNoiseBump(repeat = 4) {
   const rng = createRng(101);
   return canvasTexture(
@@ -217,50 +239,96 @@ function makeStrawBump() {
   );
 }
 
-// Painted face for villagers.
-function makeFaceTexture() {
-  return canvasTexture(256, (ctx, s) => {
-    const rng = createRng(127);
-    ctx.fillStyle = "#e0b189";
-    ctx.fillRect(0, 0, s, s);
-    drawNoise(ctx, s, rng, 0.03);
+// A unique painted face: expression, eyes, brows, optional facial hair.
+// Returns the texture; callers pick the matching skin tone separately.
+function makeFaceTexture(rng, skinColor, { stern = false } = {}) {
+  const skinCss = `#${new THREE.Color(skinColor).getHexString()}`;
+  const mouthKind = stern ? (rng() > 0.5 ? "line" : "frown") : ["smile", "open", "smile", "line"][Math.floor(rng() * 4)];
+  const browKind = stern ? "angry" : ["calm", "raised", "calm", "angry"][Math.floor(rng() * 4)];
+  const eyeKind = ["round", "wide", "sleepy"][Math.floor(rng() * 3)];
+  const hasBeard = rng() > 0.62;
+  const hasFreckles = rng() > 0.7;
+  const hairColor = `#${new THREE.Color(HAIR_TONES[Math.floor(rng() * HAIR_TONES.length)]).getHexString()}`;
 
+  return canvasTexture(256, (ctx, s) => {
+    ctx.fillStyle = skinCss;
+    ctx.fillRect(0, 0, s, s);
+    drawNoise(ctx, s, createRng(Math.floor(rng() * 1e6)), 0.03);
+
+    const eyeY = 116;
     const drawEye = (cx) => {
       ctx.fillStyle = "#f7f2ea";
       ctx.beginPath();
-      ctx.ellipse(cx, 118, 12, 8, 0, 0, Math.PI * 2);
+      if (eyeKind === "sleepy") ctx.ellipse(cx, eyeY, 12, 5.5, 0, 0, Math.PI * 2);
+      else if (eyeKind === "wide") ctx.ellipse(cx, eyeY, 11, 10, 0, 0, Math.PI * 2);
+      else ctx.ellipse(cx, eyeY, 12, 8, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#5a3d22";
+      ctx.fillStyle = "#4a3018";
       ctx.beginPath();
-      ctx.arc(cx, 118, 5.5, 0, Math.PI * 2);
+      ctx.arc(cx, eyeY + (eyeKind === "sleepy" ? 1 : 0), 5.2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#241812";
+      ctx.fillStyle = "#1c120c";
       ctx.beginPath();
-      ctx.arc(cx, 118, 2.6, 0, Math.PI * 2);
+      ctx.arc(cx, eyeY, 2.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       ctx.beginPath();
-      ctx.arc(cx + 2, 115.5, 1.6, 0, Math.PI * 2);
+      ctx.arc(cx + 2, eyeY - 2.5, 1.6, 0, Math.PI * 2);
       ctx.fill();
-      // brow
-      ctx.strokeStyle = "#6b4a2c";
-      ctx.lineWidth = 4;
+
+      ctx.strokeStyle = hairColor;
+      ctx.lineWidth = 4.5;
       ctx.beginPath();
-      ctx.arc(cx, 122, 15, Math.PI * 1.15, Math.PI * 1.85);
+      const lift = browKind === "raised" ? -6 : 0;
+      const tilt = browKind === "angry" ? (cx < 128 ? 4 : -4) : 0;
+      ctx.moveTo(cx - 13, eyeY - 14 + lift - tilt);
+      ctx.quadraticCurveTo(cx, eyeY - 20 + lift, cx + 13, eyeY - 14 + lift + tilt);
       ctx.stroke();
     };
     drawEye(104);
     drawEye(152);
 
-    // smile
-    ctx.strokeStyle = "#8a4a34";
+    // mouth
+    ctx.strokeStyle = "#7a3a28";
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(128, 152, 16, Math.PI * 0.15, Math.PI * 0.85);
+    if (mouthKind === "smile") {
+      ctx.arc(128, 150, 16, Math.PI * 0.15, Math.PI * 0.85);
+    } else if (mouthKind === "open") {
+      ctx.fillStyle = "#5c2418";
+      ctx.ellipse(128, 158, 9, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (mouthKind === "frown") {
+      ctx.arc(128, 172, 14, Math.PI * 1.2, Math.PI * 1.8);
+    } else {
+      ctx.moveTo(114, 160);
+      ctx.lineTo(142, 160);
+    }
     ctx.stroke();
 
+    if (hasBeard) {
+      ctx.strokeStyle = hairColor;
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 26; i++) {
+        const bx = 96 + Math.random() * 64;
+        const by = 168 + Math.random() * 26;
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx + (Math.random() - 0.5) * 5, by + 9);
+        ctx.stroke();
+      }
+    }
+    if (hasFreckles) {
+      ctx.fillStyle = "rgba(120,70,40,0.4)";
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        ctx.arc(92 + Math.random() * 24, 136 + Math.random() * 10, 1.4, 0, Math.PI * 2);
+        ctx.arc(140 + Math.random() * 24, 136 + Math.random() * 10, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     // blush
-    ctx.fillStyle = "rgba(214,120,90,0.25)";
+    ctx.fillStyle = "rgba(214,120,90,0.22)";
     ctx.beginPath();
     ctx.ellipse(88, 140, 9, 6, 0, 0, Math.PI * 2);
     ctx.ellipse(168, 140, 9, 6, 0, 0, Math.PI * 2);
@@ -268,32 +336,36 @@ function makeFaceTexture() {
   });
 }
 
-// Half-timbered plaster wall.
-function makePlasterTexture() {
-  const rng = createRng(11);
+// Half-timbered plaster wall — tint and beam layout vary per house.
+function makePlasterTexture(seed, tintCss) {
+  const rng = createRng(seed);
   return canvasTexture(256, (ctx, s) => {
-    ctx.fillStyle = "#ddd2ba";
+    ctx.fillStyle = tintCss;
     ctx.fillRect(0, 0, s, s);
     drawNoise(ctx, s, rng, 0.05);
     ctx.strokeStyle = "#5f452c";
-    ctx.lineWidth = 14;
+    ctx.lineWidth = 12 + rng() * 5;
     ctx.strokeRect(7, 7, s - 14, s - 14);
     ctx.beginPath();
-    ctx.moveTo(s / 2, 0);
-    ctx.lineTo(s / 2, s);
-    ctx.moveTo(0, s * 0.55);
-    ctx.lineTo(s, s * 0.55);
-    ctx.moveTo(s * 0.08, s * 0.08);
-    ctx.lineTo(s * 0.46, s * 0.5);
-    ctx.moveTo(s * 0.92, s * 0.08);
-    ctx.lineTo(s * 0.54, s * 0.5);
+    if (rng() > 0.35) {
+      ctx.moveTo(s / 2, 0);
+      ctx.lineTo(s / 2, s);
+    }
+    ctx.moveTo(0, s * (0.45 + rng() * 0.2));
+    ctx.lineTo(s, s * (0.45 + rng() * 0.2));
+    const diagonals = 1 + Math.floor(rng() * 3);
+    for (let i = 0; i < diagonals; i++) {
+      const x0 = rng() * s;
+      ctx.moveTo(x0, s * 0.1);
+      ctx.lineTo(x0 + (rng() > 0.5 ? 1 : -1) * s * 0.35, s * 0.55);
+    }
     ctx.stroke();
   });
 }
 
 // Weathered wooden planks.
-function makePlankTexture(repeatX = 1, repeatY = 1) {
-  const rng = createRng(23);
+function makePlankTexture(seed = 23, repeatX = 1, repeatY = 1) {
+  const rng = createRng(seed);
   return canvasTexture(
     256,
     (ctx, s) => {
@@ -321,21 +393,23 @@ function makePlankTexture(repeatX = 1, repeatY = 1) {
   );
 }
 
-// Terracotta roof tiles.
-function makeRoofTexture(repeatX = 3, repeatY = 2) {
-  const rng = createRng(37);
+// Roof tiles with a per-house hue (terracotta, slate, moss…).
+function makeRoofTexture(seed, baseColor, repeatX = 3, repeatY = 2) {
+  const rng = createRng(seed);
+  const base = new THREE.Color(baseColor);
   return canvasTexture(
     256,
     (ctx, s) => {
-      ctx.fillStyle = "#8f4030";
+      ctx.fillStyle = `#${base.clone().multiplyScalar(0.55).getHexString()}`;
       ctx.fillRect(0, 0, s, s);
       const rows = 6;
       const cols = 6;
+      const tile = new THREE.Color();
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const offset = r % 2 === 0 ? 0 : s / cols / 2;
-          const shade = 120 + rng() * 60;
-          ctx.fillStyle = `rgb(${shade + 30}, ${shade * 0.45}, ${shade * 0.3})`;
+          tile.copy(base).multiplyScalar(0.75 + rng() * 0.5);
+          ctx.fillStyle = `#${tile.getHexString()}`;
           ctx.beginPath();
           ctx.arc(
             offset + (c * s) / cols + s / cols / 2,
@@ -354,8 +428,8 @@ function makeRoofTexture(repeatX = 3, repeatY = 2) {
 }
 
 // Rough stone blocks.
-function makeStoneTexture(repeatX = 3, repeatY = 3) {
-  const rng = createRng(53);
+function makeStoneTexture(seed = 53, repeatX = 3, repeatY = 3) {
+  const rng = createRng(seed);
   return canvasTexture(
     256,
     (ctx, s) => {
@@ -383,7 +457,7 @@ function makeStoneTexture(repeatX = 3, repeatY = 3) {
   );
 }
 
-// Shared bump instances (textures are cheap but avoid rebuilding per NPC).
+// Shared bump instances (avoid rebuilding per NPC).
 let sharedBumps = null;
 function bumps() {
   if (!sharedBumps) {
@@ -393,7 +467,6 @@ function bumps() {
       scales: makeScalesBump(),
       cloth: makeClothBump(),
       straw: makeStrawBump(),
-      face: makeFaceTexture(),
     };
   }
   return sharedBumps;
@@ -471,7 +544,7 @@ export function makeTextTexture(lines, options = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Signboard placed in front of every milestone character.
+// Signboard placed beside every milestone character.
 // ---------------------------------------------------------------------------
 export function createSignboard(title, subtitle) {
   const group = new THREE.Group();
@@ -510,8 +583,8 @@ export function createSignboard(title, subtitle) {
 }
 
 // ---------------------------------------------------------------------------
-// Characters — sculpted with lathe profiles, capsules and organic spheres.
-// Each returns { group, update(t) }.
+// Characters — sculpted, seeded for individuality.
+// Each returns { group, update(t, delta, playerPos) }.
 // ---------------------------------------------------------------------------
 
 // Limb: capsule segments with a joint sphere, pivoting from the top.
@@ -536,8 +609,9 @@ function limb(material, upperR, lowerR, upperLen, lowerLen) {
   return pivot;
 }
 
-export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
+export function createKnight({ tunic = COLORS.cloth, isPlayer = false, seed = 7 } = {}) {
   const group = new THREE.Group();
+  const rng = createRng(seed * 2654435761);
   const b = bumps();
   const steel = metalMat(COLORS.steel);
   const chain = metalMat(COLORS.steelDark, {
@@ -547,7 +621,7 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
   });
   const clothMat = mat(tunic, { roughness: 0.92, bumpMap: b.cloth, bumpScale: 0.25 });
 
-  // Torso: waist → chest → shoulders profile, over a chainmail under-layer.
+  // Torso: waist → chest → shoulders profile.
   const torso = lathe(
     [
       [0.3, 0],
@@ -560,7 +634,6 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
     steel
   );
   torso.position.y = 0.98;
-  // Breastplate centre ridge.
   const ridge = mesh(new THREE.BoxGeometry(0.05, 0.5, 0.06), steel, 0, 1.36, 0.44);
   ridge.rotation.x = -0.12;
 
@@ -577,22 +650,34 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
   const belt = mesh(new THREE.TorusGeometry(0.37, 0.05, 8, 20), mat(0x4a3018), 0, 1.02, 0);
   belt.rotation.x = Math.PI / 2;
 
-  // Head + helmet with visor slit.
-  const head = mesh(new THREE.SphereGeometry(0.27, 20, 14), mat(COLORS.skin, { roughness: 0.7 }), 0, 1.98, 0.02);
+  // Open-faced helm with a nasal guard so the painted face shows.
+  const skinColor = SKIN_TONES[Math.floor(rng() * SKIN_TONES.length)];
+  const faceTex = makeFaceTexture(rng, skinColor, { stern: true });
+  const head = mesh(
+    new THREE.SphereGeometry(0.28, 24, 18),
+    mat(0xffffff, { map: faceTex, roughness: 0.65 }),
+    0,
+    2.0,
+    0.02
+  );
+  head.rotation.y = -Math.PI / 2; // face texture centre → +z
   const helm = lathe(
     [
-      [0.31, 0],
-      [0.34, 0.08],
-      [0.34, 0.26],
-      [0.28, 0.4],
-      [0.12, 0.5],
-      [0.01, 0.52],
+      [0.315, 0],
+      [0.33, 0.1],
+      [0.3, 0.22],
+      [0.18, 0.32],
+      [0.01, 0.36],
     ],
     steel
   );
-  helm.position.y = 1.86;
-  const visor = mesh(new THREE.BoxGeometry(0.4, 0.05, 0.12), mat(0x14161a, { roughness: 0.4 }), 0, 2.06, 0.28);
-  const plume = mesh(new THREE.ConeGeometry(0.08, 0.5, 10), clothMat, 0, 2.55, -0.06);
+  helm.position.y = 2.06;
+  const nasal = mesh(new THREE.BoxGeometry(0.05, 0.22, 0.04), steel, 0, 2.06, 0.3);
+  // cheek guards
+  const cheekGeo = new THREE.BoxGeometry(0.06, 0.2, 0.16);
+  const leftCheek = mesh(cheekGeo, steel, -0.27, 1.98, 0.12);
+  const rightCheek = mesh(cheekGeo, steel, 0.27, 1.98, 0.12);
+  const plume = mesh(new THREE.ConeGeometry(0.08, 0.5, 10), clothMat, 0, 2.6, -0.06);
 
   // Pauldrons.
   const pauldronGeo = new THREE.SphereGeometry(0.2, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -610,7 +695,10 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
     }
     capeGeo.computeVertexNormals();
   }
-  const cape = new THREE.Mesh(capeGeo, mat(tunic, { roughness: 0.95, bumpMap: b.cloth, bumpScale: 0.3, side: THREE.DoubleSide }));
+  const cape = new THREE.Mesh(
+    capeGeo,
+    mat(tunic, { roughness: 0.95, bumpMap: b.cloth, bumpScale: 0.3, side: THREE.DoubleSide })
+  );
   cape.castShadow = true;
   const capePivot = new THREE.Group();
   capePivot.position.set(0, 1.72, -0.3);
@@ -638,12 +726,11 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
   leftArm.add(mesh(gauntletGeo, steel, 0, -0.62, 0));
   rightArm.add(mesh(gauntletGeo, steel, 0, -0.62, 0));
 
-  // Sword: tapered blade with fuller, guard, wrapped grip, pommel.
+  // Sword: tapered blade with tip, guard, wrapped grip, pommel.
   const sword = new THREE.Group();
   sword.position.set(0, -0.62, 0.08);
   const bladeGeo = new THREE.BoxGeometry(0.075, 0.85, 0.02);
   {
-    // taper toward the tip
     const pos = bladeGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const y = pos.getY(i);
@@ -655,8 +742,7 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
   sword.add(mesh(bladeGeo, metalMat(0xd9dee4, { roughness: 0.18 }), 0, 0.52, 0.16));
   sword.add(mesh(new THREE.ConeGeometry(0.036, 0.12, 6), metalMat(0xd9dee4, { roughness: 0.18 }), 0, 1.0, 0.16));
   sword.add(mesh(new THREE.BoxGeometry(0.3, 0.05, 0.06), metalMat(COLORS.gold, { roughness: 0.35 }), 0, 0.08, 0.16));
-  const grip = mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.16, 8), mat(0x3d2817, { bumpMap: b.cloth, bumpScale: 0.3 }), 0, -0.03, 0.16);
-  sword.add(grip);
+  sword.add(mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.16, 8), mat(0x3d2817, { bumpMap: b.cloth, bumpScale: 0.3 }), 0, -0.03, 0.16));
   sword.add(mesh(new THREE.SphereGeometry(0.045, 10, 8), metalMat(COLORS.gold), 0, -0.13, 0.16));
   sword.rotation.x = Math.PI / 2.4;
   rightArm.add(sword);
@@ -681,32 +767,44 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
   const shieldFace = new THREE.Group();
   shieldFace.add(shield);
   shieldFace.add(mesh(new THREE.SphereGeometry(0.07, 10, 8), metalMat(COLORS.gold), -0.2, -0.44, 0.06));
-  for (const [sy, sz] of [[-0.16, -0.16], [-0.16, 0.28], [-0.68, 0.06]]) {
-    shieldFace.add(mesh(new THREE.SphereGeometry(0.025, 8, 6), metalMat(COLORS.steel), -0.2, sy - 0.02, sz));
-  }
   leftArm.add(shieldFace);
 
   group.add(
-    torso, ridge, skirt, tabard, belt, head, helm, visor, plume,
+    torso, ridge, skirt, tabard, belt, head, helm, nasal, leftCheek, rightCheek, plume,
     leftPauldron, rightPauldron, capePivot,
     leftLeg, rightLeg, leftArm, rightArm
   );
 
-  const phase = Math.random() * Math.PI * 2;
+  const phase = rng() * Math.PI * 2;
   const parts = { leftLeg, rightLeg, leftArm, rightArm, body: group };
 
-  const update = (t, walkSpeed = 0) => {
+  const update = (t, a, c) => {
     if (isPlayer) {
-      const swing = walkSpeed > 0.01 ? Math.sin(t * 9) * 0.55 * Math.min(walkSpeed, 1) : 0;
+      const walkSpeed = a || 0;
+      // Eased gait: sinusoid with a softened knee return, counter-swung arms,
+      // and a light forward lean while running.
+      const gait = Math.sin(t * 9);
+      const swing = walkSpeed > 0.01 ? gait * Math.abs(gait) * 0.62 * Math.min(walkSpeed, 1) : 0;
       leftLeg.rotation.x = swing;
       rightLeg.rotation.x = -swing;
       leftArm.rotation.x = -swing * 0.7;
       rightArm.rotation.x = swing * 0.7;
-      capePivot.rotation.x = 0.14 + walkSpeed * 0.35 + Math.sin(t * 3) * 0.04;
+      group.rotation.x = walkSpeed * 0.07;
+      group.rotation.z = Math.sin(t * 4.5) * walkSpeed * 0.02;
+      capePivot.rotation.x = 0.14 + walkSpeed * 0.4 + Math.sin(t * 3) * 0.04;
+      // idle breathing
+      const breathe = 1 + Math.sin(t * 1.4) * 0.012 * (1 - walkSpeed);
+      torso.scale.set(1, breathe, 1);
     } else {
+      const delta = a;
+      const playerPos = c;
+      facePlayer(group, delta, playerPos);
       leftArm.rotation.x = Math.sin(t * 1.3 + phase) * 0.08;
       rightArm.rotation.x = -0.35 + Math.sin(t * 0.9 + phase) * 0.25;
       capePivot.rotation.x = 0.14 + Math.sin(t * 1.1 + phase) * 0.05;
+      // weight shift between feet
+      group.rotation.z = Math.sin(t * 0.6 + phase) * 0.02;
+      torso.scale.set(1, 1 + Math.sin(t * 1.4 + phase) * 0.014, 1);
     }
     plume.rotation.z = Math.sin(t * 2 + phase) * 0.15;
   };
@@ -714,67 +812,108 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false } = {}) {
   return { group, update, parts };
 }
 
-export function createVillager({ tunic = 0x74659c } = {}) {
+export function createVillager(seed = 1) {
   const group = new THREE.Group();
+  const rng = createRng((seed + 11) * 1103515245);
   const b = bumps();
-  const tunicMat = mat(tunic, { roughness: 0.95, bumpMap: b.cloth, bumpScale: 0.35 });
-  const skinMat = mat(COLORS.skin, { roughness: 0.7 });
 
-  // Tunic flares from shoulders to hem.
+  // Individual build, palette and behaviour.
+  const skinColor = SKIN_TONES[Math.floor(rng() * SKIN_TONES.length)];
+  const tunic = TUNIC_TONES[Math.floor(rng() * TUNIC_TONES.length)];
+  const hairColor = HAIR_TONES[Math.floor(rng() * HAIR_TONES.length)];
+  const build = 0.85 + rng() * 0.4; // width
+  const stature = 0.92 + rng() * 0.16; // height
+  const headwear = ["straw", "hood", "bare"][Math.floor(rng() * 3)];
+  const behaviour = ["wave", "chat", "gaze"][Math.floor(rng() * 3)];
+
+  const tunicMat = mat(tunic, { roughness: 0.95, bumpMap: b.cloth, bumpScale: 0.35 });
+  const skinMat = mat(skinColor, { roughness: 0.7 });
+
   const body = lathe(
     [
-      [0.4, 0],
-      [0.52, 0.06],
-      [0.44, 0.5],
-      [0.36, 0.95],
-      [0.3, 1.12],
+      [0.4 * build, 0],
+      [0.52 * build, 0.06],
+      [0.44 * build, 0.5],
+      [0.36 * build, 0.95],
+      [0.3 * build, 1.12],
       [0.14, 1.2],
     ],
     tunicMat
   );
   body.position.y = 0.46;
-  // Rope belt.
-  const rope = mesh(new THREE.TorusGeometry(0.4, 0.035, 8, 22), mat(0xa8905e, { bumpMap: b.straw, bumpScale: 0.4 }), 0, 1.0, 0);
+  const rope = mesh(
+    new THREE.TorusGeometry(0.4 * build, 0.035, 8, 22),
+    mat(0xa8905e, { bumpMap: b.straw, bumpScale: 0.4 }),
+    0,
+    1.0,
+    0
+  );
   rope.rotation.x = Math.PI / 2;
 
-  // Head with painted face, nose, hair under a straw hat.
+  // Head with its own painted face.
+  const faceTex = makeFaceTexture(rng, skinColor);
   const head = mesh(
     new THREE.SphereGeometry(0.3, 24, 18),
-    mat(0xffffff, { map: b.face, roughness: 0.65 }),
+    mat(0xffffff, { map: faceTex, roughness: 0.65 }),
     0,
     1.95,
     0
   );
-  head.rotation.y = -Math.PI / 2; // face texture centre → +z
+  head.rotation.y = -Math.PI / 2;
   const nose = mesh(new THREE.SphereGeometry(0.05, 10, 8), skinMat, 0, 1.93, 0.29);
-  const hair = mesh(
-    new THREE.SphereGeometry(0.31, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2.4),
-    mat(0x5a3d22, { roughness: 0.95, bumpMap: b.noise, bumpScale: 0.4 }),
-    0,
-    1.97,
-    0
-  );
-  const hat = mesh(
-    new THREE.ConeGeometry(0.48, 0.32, 18),
-    mat(0xcaa958, { roughness: 0.98, bumpMap: b.straw, bumpScale: 0.5 }),
-    0,
-    2.28,
-    0
-  );
-  const brim = mesh(
-    new THREE.CylinderGeometry(0.52, 0.55, 0.045, 18),
-    mat(0xba9848, { roughness: 0.98, bumpMap: b.straw, bumpScale: 0.5 }),
-    0,
-    2.15,
-    0
-  );
 
-  // Arms with hands; feet peeking from the hem.
+  const hairMat = mat(hairColor, { roughness: 0.95, bumpMap: b.noise, bumpScale: 0.4 });
+  if (headwear === "straw") {
+    group.add(
+      mesh(
+        new THREE.SphereGeometry(0.31, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2.4),
+        hairMat, 0, 1.97, 0
+      ),
+      mesh(new THREE.ConeGeometry(0.48, 0.32, 18), mat(0xcaa958, { roughness: 0.98, bumpMap: b.straw, bumpScale: 0.5 }), 0, 2.28, 0),
+      mesh(new THREE.CylinderGeometry(0.52, 0.55, 0.045, 18), mat(0xba9848, { roughness: 0.98, bumpMap: b.straw, bumpScale: 0.5 }), 0, 2.15, 0)
+    );
+  } else if (headwear === "hood") {
+    const hood = lathe(
+      [
+        [0.34, 0],
+        [0.36, 0.14],
+        [0.3, 0.34],
+        [0.14, 0.46],
+        [0.01, 0.48],
+      ],
+      mat(new THREE.Color(tunic).multiplyScalar(0.75).getHex(), {
+        roughness: 0.95,
+        bumpMap: b.cloth,
+        bumpScale: 0.35,
+      })
+    );
+    hood.position.y = 1.86;
+    // drape over the shoulders
+    const drape = lathe(
+      [
+        [0.42, 0],
+        [0.3, 0.18],
+      ],
+      mat(new THREE.Color(tunic).multiplyScalar(0.75).getHex(), { roughness: 0.95 })
+    );
+    drape.position.y = 1.6;
+    group.add(hood, drape);
+  } else {
+    // bare head: hair cap + a small bun or side part
+    group.add(
+      mesh(
+        new THREE.SphereGeometry(0.315, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2.1),
+        hairMat, 0, 1.98, -0.02
+      )
+    );
+    if (rng() > 0.5) group.add(mesh(new THREE.SphereGeometry(0.09, 10, 8), hairMat, 0, 2.16, -0.24));
+  }
+
   const leftArm = limb(tunicMat, 0.09, 0.075, 0.26, 0.26);
-  leftArm.position.set(-0.44, 1.58, 0);
+  leftArm.position.set(-0.44 * build, 1.58, 0);
   leftArm.add(mesh(new THREE.SphereGeometry(0.075, 10, 8), skinMat, 0, -0.54, 0));
   const rightArm = limb(tunicMat, 0.09, 0.075, 0.26, 0.26);
-  rightArm.position.set(0.44, 1.58, 0);
+  rightArm.position.set(0.44 * build, 1.58, 0);
   rightArm.add(mesh(new THREE.SphereGeometry(0.075, 10, 8), skinMat, 0, -0.54, 0));
 
   const shoeGeo = new THREE.SphereGeometry(0.11, 10, 8);
@@ -784,160 +923,320 @@ export function createVillager({ tunic = 0x74659c } = {}) {
     group.add(shoe);
   }
 
-  group.add(body, rope, head, nose, hair, hat, brim, leftArm, rightArm);
+  group.add(body, rope, head, nose, leftArm, rightArm);
+  group.scale.setScalar(stature);
 
-  const phase = Math.random() * Math.PI * 2;
-  const update = (t) => {
-    rightArm.rotation.z = -2.4 + Math.sin(t * 4 + phase) * 0.35;
-    leftArm.rotation.x = Math.sin(t * 1.5 + phase) * 0.1;
-    group.position.y = group.userData.baseY + Math.abs(Math.sin(t * 2.2 + phase)) * 0.06;
-    head.rotation.y = -Math.PI / 2 + Math.sin(t * 0.7 + phase) * 0.4;
-  };
+  const phase = rng() * Math.PI * 2;
+  const update = (t, delta, playerPos) => {
+    facePlayer(group, delta, playerPos);
+    // breathing + weight shift
+    body.scale.x = 1 + Math.sin(t * 1.6 + phase) * 0.015;
+    group.rotation.z = Math.sin(t * 0.7 + phase) * 0.02;
 
-  return { group, update };
-}
-
-export function createMonster({ skin = COLORS.monster } = {}) {
-  const group = new THREE.Group();
-  const b = bumps();
-  const bodyMat = mat(skin, { roughness: 0.75, bumpMap: b.noise, bumpScale: 0.5 });
-
-  // Lumpy displaced body with a lighter belly.
-  const body = organicSphere(0.85, bodyMat, { bump: 0.09, seed: 3 });
-  body.position.y = 0.95;
-  body.scale.set(1, 0.94, 0.96);
-  const belly = mesh(new THREE.SphereGeometry(0.62, 18, 14), mat(0xb9cf8e, { roughness: 0.8 }), 0, 0.78, 0.34);
-  belly.scale.set(0.85, 0.75, 0.55);
-
-  const eyeWhite = mat(0xf5f2e8, { roughness: 0.25 });
-  const eyeDark = mat(0x201a14, { roughness: 0.25 });
-  for (const side of [-1, 1]) {
-    group.add(mesh(new THREE.SphereGeometry(0.16, 14, 10), eyeWhite, side * 0.3, 1.28, 0.66));
-    group.add(mesh(new THREE.SphereGeometry(0.07, 10, 8), eyeDark, side * 0.3, 1.28, 0.8));
-    // heavy brow
-    const brow = mesh(new THREE.CapsuleGeometry(0.05, 0.22, 3, 8), bodyMat, side * 0.3, 1.47, 0.62);
-    brow.rotation.z = Math.PI / 2 + side * 0.25;
-    group.add(brow);
-    const horn = mesh(
-      new THREE.ConeGeometry(0.11, 0.42, 10),
-      mat(0xe0d4b8, { roughness: 0.5, bumpMap: b.noise, bumpScale: 0.3 }),
-      side * 0.44,
-      1.76,
-      0
-    );
-    horn.rotation.z = -side * 0.5;
-    group.add(horn);
-    // ears
-    const ear = mesh(new THREE.ConeGeometry(0.09, 0.26, 8), bodyMat, side * 0.72, 1.32, -0.1);
-    ear.rotation.z = -side * 1.25;
-    group.add(ear);
-    // stubby arms with claws
-    const arm = mesh(new THREE.CapsuleGeometry(0.12, 0.3, 3, 10), bodyMat, side * 0.78, 0.85, 0.15);
-    arm.rotation.z = -side * 0.9;
-    group.add(arm);
-    for (let c = 0; c < 3; c++) {
-      const claw = mesh(new THREE.ConeGeometry(0.03, 0.1, 6), eyeWhite, side * (0.92 + c * 0.05), 0.62 - c * 0.03, 0.24 + c * 0.06);
-      claw.rotation.x = 0.8;
-      group.add(claw);
+    if (behaviour === "wave") {
+      rightArm.rotation.z = -2.4 + Math.sin(t * 4 + phase) * 0.35;
+      leftArm.rotation.x = Math.sin(t * 1.5 + phase) * 0.1;
+      group.position.y = group.userData.baseY + Math.abs(Math.sin(t * 2.2 + phase)) * 0.05;
+    } else if (behaviour === "chat") {
+      // animated talking gestures
+      rightArm.rotation.x = -0.6 + Math.sin(t * 3.1 + phase) * 0.3;
+      leftArm.rotation.x = -0.4 + Math.sin(t * 2.6 + phase + 1.5) * 0.25;
+      group.position.y = group.userData.baseY;
+    } else {
+      // gazing around, hands settled
+      rightArm.rotation.x = Math.sin(t * 1.2 + phase) * 0.06;
+      leftArm.rotation.x = Math.sin(t * 1.2 + phase + 2) * 0.06;
+      group.position.y = group.userData.baseY;
+      head.rotation.y = -Math.PI / 2 + Math.sin(t * 0.5 + phase) * 0.55;
     }
-    // feet
-    const foot = mesh(new THREE.SphereGeometry(0.22, 14, 10), bodyMat, side * 0.5, 0.2, 0.25);
-    foot.scale.set(1, 0.65, 1.3);
-    group.add(foot);
-  }
-  // Toothy grin.
-  for (let i = 0; i < 4; i++) {
-    group.add(mesh(new THREE.ConeGeometry(0.05, 0.13, 6), eyeWhite, -0.24 + i * 0.16, 0.84, 0.76));
-  }
-
-  group.add(body, belly);
-
-  const phase = Math.random() * Math.PI * 2;
-  const update = (t) => {
-    const hop = Math.abs(Math.sin(t * 3 + phase));
-    group.position.y = group.userData.baseY + hop * 0.45;
-    const squash = 1 + (1 - hop) * 0.12;
-    group.scale.set(squash, 2 - squash, squash);
+    if (behaviour !== "gaze") {
+      head.rotation.y = -Math.PI / 2 + Math.sin(t * 0.7 + phase) * 0.3;
+    }
   };
 
   return { group, update };
 }
 
-export function createDragon({ skin = COLORS.dragon, wing = COLORS.dragonWing } = {}) {
+export function createMonster(seed = 3) {
   const group = new THREE.Group();
+  const rng = createRng((seed + 5) * 69069);
   const b = bumps();
-  const bodyMat = mat(skin, {
-    roughness: 0.6,
-    metalness: 0.1,
-    bumpMap: b.scales,
-    bumpScale: 0.6,
+  const hue = 0.22 + rng() * 0.14; // mossy green → swamp olive
+  const skinColor = new THREE.Color().setHSL(hue, 0.42, 0.34).getHex();
+  const bodyMat = mat(skinColor, { roughness: 0.78, bumpMap: b.noise, bumpScale: 0.55 });
+  const hideMat = mat(new THREE.Color(skinColor).multiplyScalar(0.8).getHex(), {
+    roughness: 0.85,
+    bumpMap: b.noise,
+    bumpScale: 0.5,
   });
-  const bellyMat = mat(0xdec08a, { roughness: 0.75, bumpMap: b.cloth, bumpScale: 0.3 });
-  const boneMat = mat(0xe0d4b8, { roughness: 0.5, bumpMap: b.noise, bumpScale: 0.3 });
+  const boneMat = mat(0xd8ccae, { roughness: 0.5, bumpMap: b.noise, bumpScale: 0.3 });
 
-  // Organic body.
-  const body = organicSphere(1.5, bodyMat, { bump: 0.05, seed: 7, detail: 1.6 });
-  body.position.y = 2.6;
-  body.scale.set(1, 0.85, 1.5);
-  const belly = mesh(new THREE.SphereGeometry(1.2, 20, 14), bellyMat, 0, 2.25, 0.4);
-  belly.scale.set(0.78, 0.62, 1.15);
+  // Hunched ogre body: heavy pear silhouette leaning forward.
+  const body = organicSphere(0.95, bodyMat, { bump: 0.08, seed: seed + 3 });
+  body.position.set(0, 1.05, -0.05);
+  body.scale.set(1, 1.05, 0.92);
+  body.rotation.x = 0.22;
+  const gut = mesh(new THREE.SphereGeometry(0.66, 18, 14), mat(0xb9c08a, { roughness: 0.85, bumpMap: b.noise, bumpScale: 0.4 }), 0, 0.78, 0.42);
+  gut.scale.set(0.85, 0.8, 0.6);
 
-  // Neck: chain of spheres along a curve up to the head.
-  const neckCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 3.1, 1.15),
-    new THREE.Vector3(0, 3.8, 1.6),
-    new THREE.Vector3(0, 4.45, 1.95),
-    new THREE.Vector3(0, 4.75, 2.15),
-  ]);
-  for (let i = 0; i < 6; i++) {
-    const p = neckCurve.getPoint(i / 5);
-    const seg = mesh(new THREE.SphereGeometry(0.55 - i * 0.05, 16, 12), bodyMat, p.x, p.y, p.z);
-    group.add(seg);
+  // Head sits low between the shoulders: heavy jaw, underbite fangs.
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 1.78, 0.42);
+  const skull = organicSphere(0.42, bodyMat, { bump: 0.06, seed: seed + 9 });
+  skull.scale.set(1.05, 0.9, 0.95);
+  headGroup.add(skull);
+  const jaw = mesh(new THREE.SphereGeometry(0.34, 16, 12), hideMat, 0, -0.22, 0.16);
+  jaw.scale.set(1.05, 0.55, 1.05);
+  headGroup.add(jaw);
+  // underbite fangs point up
+  for (const side of [-1, 1]) {
+    const fang = mesh(new THREE.ConeGeometry(0.05, 0.18, 6), boneMat, side * 0.18, -0.08, 0.4);
+    headGroup.add(fang);
+  }
+  // small angry eyes under a heavy brow
+  const eyeMat = mat(0xe8c73c, { emissive: 0xa8781a, emissiveIntensity: 0.6, roughness: 0.3 });
+  for (const side of [-1, 1]) {
+    headGroup.add(mesh(new THREE.SphereGeometry(0.06, 10, 8), eyeMat, side * 0.16, 0.08, 0.36));
+    const brow = mesh(new THREE.CapsuleGeometry(0.05, 0.2, 3, 8), hideMat, side * 0.17, 0.2, 0.34);
+    brow.rotation.z = Math.PI / 2 + side * 0.35;
+    headGroup.add(brow);
+    // torn ears
+    const ear = mesh(new THREE.ConeGeometry(0.09, 0.3, 6), hideMat, side * 0.46, 0.12, -0.08);
+    ear.rotation.z = -side * 1.35;
+    headGroup.add(ear);
+  }
+  // flat nose nostrils
+  headGroup.add(mesh(new THREE.SphereGeometry(0.025, 6, 5), mat(0x1c140c), -0.05, -0.02, 0.44));
+  headGroup.add(mesh(new THREE.SphereGeometry(0.025, 6, 5), mat(0x1c140c), 0.05, -0.02, 0.44));
+
+  // Back spikes down the hunched spine.
+  for (let i = 0; i < 4; i++) {
+    const spike = mesh(new THREE.ConeGeometry(0.09 - i * 0.012, 0.3 - i * 0.03, 6), boneMat, 0, 1.85 - i * 0.28, -0.5 - i * 0.12);
+    spike.rotation.x = -0.5;
+    group.add(spike);
+  }
+  // stub tail
+  const tail = mesh(new THREE.ConeGeometry(0.14, 0.45, 8), hideMat, 0, 0.55, -0.75);
+  tail.rotation.x = 1.25;
+
+  // Long hanging arms with clawed hands; thick legs with flat feet.
+  const arms = [];
+  for (const side of [-1, 1]) {
+    const arm = limb(bodyMat, 0.16, 0.13, 0.42, 0.4);
+    arm.position.set(side * 0.78, 1.62, 0.12);
+    arm.rotation.z = -side * 0.18;
+    const hand = mesh(new THREE.SphereGeometry(0.16, 12, 9), hideMat, 0, -0.9, 0.02);
+    hand.scale.set(1, 0.8, 1.2);
+    arm.add(hand);
+    for (let c = 0; c < 3; c++) {
+      const claw = mesh(new THREE.ConeGeometry(0.035, 0.13, 6), boneMat, (c - 1) * 0.08, -1.0, 0.14);
+      claw.rotation.x = 2.6;
+      arm.add(claw);
+    }
+    group.add(arm);
+    arms.push(arm);
+
+    const leg = limb(bodyMat, 0.18, 0.15, 0.3, 0.26);
+    leg.position.set(side * 0.34, 0.62, 0);
+    const foot = mesh(new THREE.SphereGeometry(0.19, 12, 9), hideMat, 0, -0.6, 0.1);
+    foot.scale.set(1.1, 0.5, 1.6);
+    leg.add(foot);
+    for (let c = 0; c < 3; c++) {
+      const claw = mesh(new THREE.ConeGeometry(0.04, 0.12, 6), boneMat, (c - 1) * 0.09, -0.66, 0.36);
+      claw.rotation.x = 1.4;
+      leg.add(claw);
+    }
+    group.add(leg);
   }
 
-  // Head: skull, snout, jaw, nostrils, teeth, glowing eyes, curved horns.
+  group.add(body, gut, headGroup, tail);
+
+  const phase = rng() * Math.PI * 2;
+  const update = (t, delta, playerPos) => {
+    facePlayer(group, delta, playerPos, 10, 2.2);
+    // Heavy idle: breathing gut, shoulder roll, knuckle sway, an occasional
+    // intimidating stomp-hop instead of constant bouncing.
+    const breathe = 1 + Math.sin(t * 1.1 + phase) * 0.03;
+    gut.scale.set(0.85 * breathe, 0.8, 0.6 * breathe);
+    body.rotation.z = Math.sin(t * 0.9 + phase) * 0.04;
+    headGroup.rotation.y = Math.sin(t * 0.55 + phase) * 0.4;
+    headGroup.rotation.x = Math.sin(t * 1.3 + phase) * 0.06;
+    arms[0].rotation.x = Math.sin(t * 1.15 + phase) * 0.1;
+    arms[1].rotation.x = Math.sin(t * 1.15 + phase + Math.PI) * 0.1;
+    const hopWave = Math.sin(t * 0.9 + phase);
+    const hop = Math.max(0, hopWave) ** 6; // rare, punchy hop
+    group.position.y = group.userData.baseY + hop * 0.4;
+    const squash = 1 - hop * 0.06 + (1 - Math.abs(hopWave)) * 0.015;
+    group.scale.set(2 - squash, squash, 2 - squash);
+  };
+
+  return { group, update };
+}
+
+export function createDragon(seed = 4) {
+  const group = new THREE.Group();
+  const rng = createRng((seed + 13) * 40503);
+  const b = bumps();
+  const bodyMat = mat(COLORS.dragon, {
+    roughness: 0.55,
+    metalness: 0.12,
+    bumpMap: b.scales,
+    bumpScale: 0.65,
+  });
+  const bellyMat = mat(0xcfa870, {
+    roughness: 0.7,
+    bumpMap: b.scales,
+    bumpScale: 0.4,
+  });
+  const boneMat = mat(0xd8ccae, { roughness: 0.5, bumpMap: b.noise, bumpScale: 0.3 });
+
+  // Grounded quadruped: horizontal body, deep chest.
+  const body = organicSphere(1.35, bodyMat, { bump: 0.05, seed: seed + 7, detail: 1.6 });
+  body.position.set(0, 1.85, -0.2);
+  body.scale.set(1.0, 0.9, 1.85);
+  const chest = mesh(new THREE.SphereGeometry(1.05, 20, 14), bodyMat, 0, 1.8, 1.15);
+  chest.scale.set(0.95, 0.95, 1.0);
+  // belly scutes: stacked plates under chest → tail root
+  for (let i = 0; i < 6; i++) {
+    const scute = mesh(new THREE.CylinderGeometry(0.52 - i * 0.03, 0.56 - i * 0.03, 0.16, 14), bellyMat, 0, 1.12, 1.1 - i * 0.5);
+    scute.rotation.x = Math.PI / 2 - 0.08;
+    group.add(scute);
+  }
+
+  // S-curved neck of shrinking rings up to the head.
+  const neckCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 2.2, 1.6),
+    new THREE.Vector3(0, 2.9, 2.15),
+    new THREE.Vector3(0, 3.7, 2.3),
+    new THREE.Vector3(0, 4.25, 2.2),
+  ]);
+  for (let i = 0; i < 7; i++) {
+    const p = neckCurve.getPoint(i / 6);
+    const seg = mesh(new THREE.SphereGeometry(0.52 - i * 0.045, 16, 12), bodyMat, p.x, p.y, p.z);
+    seg.scale.set(1, 0.9, 1.1);
+    group.add(seg);
+    if (i > 0 && i < 6) {
+      const plate = mesh(new THREE.CylinderGeometry(0.3 - i * 0.02, 0.34 - i * 0.02, 0.12, 12), bellyMat, p.x, p.y - 0.12, p.z + 0.3);
+      plate.rotation.x = Math.PI / 2 - 0.5;
+      group.add(plate);
+    }
+  }
+
+  // Head: long tapered skull with brow ridges, frills, horns and smoke.
   const head = new THREE.Group();
-  head.position.set(0, 4.8, 2.2);
-  head.add(mesh(new THREE.SphereGeometry(0.52, 20, 14), bodyMat));
-  const snout = mesh(new THREE.SphereGeometry(0.32, 16, 12), bodyMat, 0, -0.08, 0.52);
-  snout.scale.set(0.9, 0.62, 1.5);
-  head.add(snout);
-  const jaw = mesh(new THREE.SphereGeometry(0.26, 14, 10), bodyMat, 0, -0.28, 0.42);
-  jaw.scale.set(0.82, 0.42, 1.35);
-  head.add(jaw);
+  head.position.set(0, 4.45, 2.25);
+  const skull = mesh(new THREE.SphereGeometry(0.48, 20, 14), bodyMat);
+  skull.scale.set(0.9, 0.78, 1.1);
+  head.add(skull);
+  const upperSnout = mesh(new THREE.SphereGeometry(0.3, 16, 12), bodyMat, 0, -0.04, 0.62);
+  upperSnout.scale.set(0.78, 0.5, 1.7);
+  head.add(upperSnout);
+  const lowerJaw = mesh(new THREE.SphereGeometry(0.24, 14, 10), bellyMat, 0, -0.22, 0.5);
+  lowerJaw.scale.set(0.7, 0.35, 1.5);
+  head.add(lowerJaw);
+  // nostril ridges + dark nostrils
   for (const side of [-1, 1]) {
-    head.add(mesh(new THREE.SphereGeometry(0.045, 8, 6), mat(0x1a0f0a), side * 0.1, 0.04, 0.94));
-    // fangs
-    const fang = mesh(new THREE.ConeGeometry(0.035, 0.12, 6), boneMat, side * 0.16, -0.22, 0.72);
-    fang.rotation.x = Math.PI;
-    head.add(fang);
-    // curved horn: three tilted cone segments
-    let hx = side * 0.26;
-    let hy = 0.34;
-    let hz = -0.18;
-    let tilt = -0.5;
+    head.add(mesh(new THREE.SphereGeometry(0.05, 8, 6), bodyMat, side * 0.1, 0.08, 1.05));
+    head.add(mesh(new THREE.SphereGeometry(0.025, 6, 5), mat(0x140c08), side * 0.1, 0.09, 1.1));
+    // teeth row
+    for (let tth = 0; tth < 4; tth++) {
+      const tooth = mesh(new THREE.ConeGeometry(0.022, 0.09, 5), boneMat, side * (0.1 + tth * 0.035), -0.17, 0.55 + tth * 0.12);
+      tooth.rotation.x = Math.PI;
+      head.add(tooth);
+    }
+    // brow ridge over the eye
+    const ridge = mesh(new THREE.CapsuleGeometry(0.05, 0.2, 3, 8), bodyMat, side * 0.24, 0.22, 0.3);
+    ridge.rotation.z = Math.PI / 2 + side * 0.3;
+    head.add(ridge);
+    // cheek frill fins
+    const frillShape = new THREE.Shape();
+    frillShape.moveTo(0, 0);
+    frillShape.lineTo(-0.34, 0.16);
+    frillShape.lineTo(-0.22, 0);
+    frillShape.lineTo(-0.34, -0.18);
+    frillShape.closePath();
+    const frill = new THREE.Mesh(
+      new THREE.ShapeGeometry(frillShape),
+      mat(COLORS.dragonWing, { roughness: 0.8, side: THREE.DoubleSide })
+    );
+    frill.position.set(side * 0.4, 0.02, -0.05);
+    frill.rotation.y = side * 0.5;
+    head.add(frill);
+    // swept-back segmented horns
+    let hx = side * 0.2;
+    let hy = 0.32;
+    let hz = -0.2;
+    let tilt = -0.7;
     for (let s = 0; s < 3; s++) {
       const segLen = 0.3 - s * 0.06;
-      const hornSeg = mesh(new THREE.ConeGeometry(0.09 - s * 0.025, segLen, 8), boneMat, hx, hy, hz);
+      const hornSeg = mesh(new THREE.ConeGeometry(0.08 - s * 0.02, segLen, 8), boneMat, hx, hy, hz);
       hornSeg.rotation.x = tilt;
       head.add(hornSeg);
-      hy += Math.cos(tilt) * segLen * 0.75;
-      hz += Math.sin(tilt) * segLen * 0.75 - 0.02;
-      tilt -= 0.45;
+      hy += Math.cos(tilt) * segLen * 0.7;
+      hz += Math.sin(tilt) * segLen * 0.7;
+      tilt -= 0.4;
     }
   }
-  const eyeMat = mat(0xf5d442, { emissive: 0xf5b83c, emissiveIntensity: 1.2, roughness: 0.3 });
-  head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), eyeMat, -0.26, 0.14, 0.36));
-  head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), eyeMat, 0.26, 0.14, 0.36));
+  const eyeMat = mat(0xf5c23c, { emissive: 0xe89a2e, emissiveIntensity: 1.3, roughness: 0.3 });
+  head.add(mesh(new THREE.SphereGeometry(0.08, 12, 10), eyeMat, -0.22, 0.12, 0.42));
+  head.add(mesh(new THREE.SphereGeometry(0.08, 12, 10), eyeMat, 0.22, 0.12, 0.42));
+  // slit pupils
+  for (const side of [-1, 1]) {
+    const pupil = mesh(new THREE.BoxGeometry(0.015, 0.09, 0.02), mat(0x140c08), side * 0.22, 0.12, 0.49);
+    head.add(pupil);
+  }
 
-  // Spine plates.
-  for (let i = 0; i < 7; i++) {
-    const spike = mesh(new THREE.ConeGeometry(0.13 - i * 0.008, 0.42, 6), boneMat, 0, 3.78 - i * 0.14, 0.85 - i * 0.55);
-    spike.rotation.x = -0.35;
+  // Smoke wisps drifting from the nostrils.
+  const smokeCount = 10;
+  const smokeGeo = new THREE.BufferGeometry();
+  const smokePos = new Float32Array(smokeCount * 3);
+  const smokeSeed = new Float32Array(smokeCount);
+  for (let i = 0; i < smokeCount; i++) {
+    smokeSeed[i] = rng();
+    smokePos[i * 3] = (i % 2 === 0 ? -0.1 : 0.1);
+    smokePos[i * 3 + 1] = 0.1 + rng() * 0.6;
+    smokePos[i * 3 + 2] = 1.1 + rng() * 0.3;
+  }
+  smokeGeo.setAttribute("position", new THREE.BufferAttribute(smokePos, 3));
+  const smokeCanvas = document.createElement("canvas");
+  smokeCanvas.width = 32;
+  smokeCanvas.height = 32;
+  {
+    const ctx = smokeCanvas.getContext("2d");
+    const g = ctx.createRadialGradient(16, 16, 1, 16, 16, 15);
+    g.addColorStop(0, "rgba(200,200,200,0.7)");
+    g.addColorStop(1, "rgba(200,200,200,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 32, 32);
+  }
+  const smokeTex = new THREE.CanvasTexture(smokeCanvas);
+  const smoke = new THREE.Points(
+    smokeGeo,
+    new THREE.PointsMaterial({
+      map: smokeTex,
+      size: 0.5,
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false,
+    })
+  );
+  smoke.renderOrder = 3;
+  head.add(smoke);
+
+  // Spine plates from neck to tail.
+  for (let i = 0; i < 10; i++) {
+    const spike = mesh(
+      new THREE.ConeGeometry(0.13 - i * 0.008, 0.4 - i * 0.02, 6),
+      boneMat,
+      0,
+      2.9 - i * 0.1 - (i > 5 ? (i - 5) * 0.12 : 0),
+      1.3 - i * 0.55
+    );
+    spike.rotation.x = -0.3;
     group.add(spike);
   }
 
-  // Webbed wings: membrane shape + finger bones, pivoting at the shoulder.
+  // Webbed wings: membrane + finger bones, folded at rest, slow stretches.
   const membraneShape = new THREE.Shape();
   membraneShape.moveTo(0, 0);
   membraneShape.lineTo(1.35, 0.5);
@@ -947,7 +1246,7 @@ export function createDragon({ skin = COLORS.dragon, wing = COLORS.dragonWing } 
   membraneShape.quadraticCurveTo(0.8, -0.45, 0.42, -0.8);
   membraneShape.quadraticCurveTo(0.18, -0.45, 0, 0);
   const membraneGeo = new THREE.ShapeGeometry(membraneShape, 8);
-  const membraneMat = mat(wing, {
+  const membraneMat = mat(COLORS.dragonWing, {
     roughness: 0.8,
     side: THREE.DoubleSide,
     bumpMap: b.cloth,
@@ -956,12 +1255,11 @@ export function createDragon({ skin = COLORS.dragon, wing = COLORS.dragonWing } 
 
   const buildWing = (mirror) => {
     const pivot = new THREE.Group();
-    pivot.position.set(mirror * 0.85, 3.35, 0.1);
+    pivot.position.set(mirror * 0.8, 2.6, 0.4);
     const wingGroup = new THREE.Group();
     const membrane = new THREE.Mesh(membraneGeo, membraneMat);
     membrane.castShadow = true;
     wingGroup.add(membrane);
-    // bones along the leading edge and fingers
     const bonePts = [
       [new THREE.Vector3(0, 0, 0), new THREE.Vector3(1.35, 0.5, 0)],
       [new THREE.Vector3(1.35, 0.5, 0), new THREE.Vector3(2.65, 0.72, 0)],
@@ -978,7 +1276,6 @@ export function createDragon({ skin = COLORS.dragon, wing = COLORS.dragonWing } 
       );
       wingGroup.add(bone);
     }
-    // lay flat, sweep back slightly
     wingGroup.rotation.x = -Math.PI / 2;
     wingGroup.rotation.z = mirror < 0 ? Math.PI : 0;
     pivot.add(wingGroup);
@@ -987,65 +1284,92 @@ export function createDragon({ skin = COLORS.dragon, wing = COLORS.dragonWing } 
   const leftWing = buildWing(-1);
   const rightWing = buildWing(1);
 
-  // Haunches + tucked feet.
-  for (const side of [-1, 1]) {
-    const haunch = mesh(new THREE.SphereGeometry(0.55, 16, 12), bodyMat, side * 0.95, 1.9, -0.5);
-    haunch.scale.set(0.8, 1, 1.15);
+  // Four legs planted on the ground.
+  for (const [side, zPos, size] of [
+    [-1, 1.05, 0.9],
+    [1, 1.05, 0.9],
+    [-1, -1.15, 1.15],
+    [1, -1.15, 1.15],
+  ]) {
+    const haunch = mesh(new THREE.SphereGeometry(0.5 * size, 16, 12), bodyMat, side * 0.95, 1.55, zPos);
+    haunch.scale.set(0.75, 1, 1.05);
     group.add(haunch);
-    const foot = mesh(new THREE.SphereGeometry(0.3, 14, 10), bodyMat, side * 0.85, 1.35, 0.15);
-    foot.scale.set(0.9, 0.6, 1.4);
+    const shin = mesh(new THREE.CapsuleGeometry(0.14 * size, 0.7, 4, 10), bodyMat, side * 1.0, 0.7, zPos + 0.08);
+    group.add(shin);
+    const foot = mesh(new THREE.SphereGeometry(0.24 * size, 12, 9), bodyMat, side * 1.0, 0.18, zPos + 0.2);
+    foot.scale.set(1, 0.5, 1.5);
     group.add(foot);
     for (let c = 0; c < 3; c++) {
-      const claw = mesh(new THREE.ConeGeometry(0.05, 0.16, 6), boneMat, side * (0.7 + c * 0.14), 1.24, 0.55);
-      claw.rotation.x = 1.2;
+      const claw = mesh(new THREE.ConeGeometry(0.05, 0.16, 6), boneMat, side * (0.85 + c * 0.14), 0.12, zPos + 0.55);
+      claw.rotation.x = 1.25;
       group.add(claw);
     }
   }
 
-  // Tail: tapering sphere chain with a fin at the tip.
+  // Long tail curving behind, with a fin at the tip.
   const tail = new THREE.Group();
-  tail.position.set(0, 2.45, -1.6);
+  tail.position.set(0, 1.75, -2.3);
   let prev = tail;
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     const pivot = new THREE.Group();
-    pivot.position.z = i === 0 ? 0 : -0.62;
-    const seg = mesh(new THREE.SphereGeometry(0.4 - i * 0.055, 14, 10), bodyMat, 0, 0, -0.3);
+    pivot.position.z = i === 0 ? 0 : -0.55;
+    const seg = mesh(new THREE.SphereGeometry(0.36 - i * 0.038, 14, 10), bodyMat, 0, -i * 0.02, -0.28);
     pivot.add(seg);
     prev.add(pivot);
     prev = pivot;
   }
   const finShape = new THREE.Shape();
   finShape.moveTo(0, 0);
-  finShape.lineTo(-0.45, 0.4);
-  finShape.lineTo(-0.32, 0);
-  finShape.lineTo(-0.45, -0.4);
-  finShape.lineTo(0, 0);
+  finShape.lineTo(-0.5, 0.42);
+  finShape.lineTo(-0.34, 0);
+  finShape.lineTo(-0.5, -0.42);
+  finShape.closePath();
   const fin = new THREE.Mesh(new THREE.ShapeGeometry(finShape), membraneMat);
   fin.castShadow = true;
   fin.rotation.y = Math.PI / 2;
-  fin.position.set(0, 0, -0.45);
+  fin.position.set(0, 0, -0.4);
   prev.add(fin);
 
-  group.add(body, belly, head, leftWing, rightWing, tail);
+  group.add(body, chest, head, leftWing, rightWing, tail);
 
-  const phase = Math.random() * Math.PI * 2;
-  const update = (t) => {
-    const flap = Math.sin(t * 3.2 + phase);
-    leftWing.rotation.z = -flap * 0.5 - 0.12;
-    rightWing.rotation.z = flap * 0.5 + 0.12;
-    group.position.y = group.userData.baseY + Math.sin(t * 1.6 + phase) * 0.35 + 0.6;
-    tail.rotation.y = Math.sin(t * 1.2 + phase) * 0.3;
-    head.rotation.y = Math.sin(t * 0.6 + phase) * 0.35;
+  const phase = rng() * Math.PI * 2;
+  const update = (t, delta) => {
+    // Grounded idle: breathing ribcage, tail lash, head survey; wings stay
+    // folded and stretch open every few seconds.
+    const breathe = 1 + Math.sin(t * 0.9 + phase) * 0.025;
+    body.scale.set(1.0 * breathe, 0.9, 1.85);
+    const stretch = Math.max(0, Math.sin(t * 0.45 + phase)) ** 3;
+    const flutter = Math.sin(t * 6 + phase) * 0.05 * stretch;
+    leftWing.rotation.z = -0.55 + stretch * 0.75 + flutter;
+    rightWing.rotation.z = 0.55 - stretch * 0.75 - flutter;
+    tail.rotation.y = Math.sin(t * 0.7 + phase) * 0.35;
+    tail.rotation.x = Math.sin(t * 1.1 + phase) * 0.05;
+    head.rotation.y = Math.sin(t * 0.4 + phase) * 0.5;
+    head.rotation.x = Math.sin(t * 0.9 + phase) * 0.07;
+
+    // smoke drift
+    const attr = smoke.geometry.attributes.position;
+    for (let i = 0; i < smokeCount; i++) {
+      let y = attr.getY(i) + (delta || 0.016) * (0.25 + smokeSeed[i] * 0.3);
+      let z = attr.getZ(i) + (delta || 0.016) * 0.15;
+      if (y > 0.9) {
+        y = 0.08;
+        z = 1.1;
+      }
+      attr.setY(i, y);
+      attr.setZ(i, z);
+    }
+    attr.needsUpdate = true;
   };
 
   return { group, update };
 }
 
 export const CHARACTER_BUILDERS = {
-  knight: () => createKnight({ tunic: 0x35619e }),
-  villager: createVillager,
-  monster: createMonster,
-  dragon: createDragon,
+  knight: (seed) => createKnight({ tunic: 0x35619e, seed }),
+  villager: (seed) => createVillager(seed),
+  monster: (seed) => createMonster(seed),
+  dragon: (seed) => createDragon(seed),
 };
 
 // ---------------------------------------------------------------------------
@@ -1055,7 +1379,7 @@ export function createWindmill(labelLines) {
   const group = new THREE.Group();
   const b = bumps();
 
-  const stoneTex = makeStoneTexture(3, 4);
+  const stoneTex = makeStoneTexture(53, 3, 4);
   const towerMat = new THREE.MeshStandardMaterial({
     map: stoneTex,
     bumpMap: stoneTex,
@@ -1063,7 +1387,7 @@ export function createWindmill(labelLines) {
     roughness: 0.9,
   });
   const tower = mesh(new THREE.CylinderGeometry(2.2, 3.4, 11, 24), towerMat, 0, 5.5, 0);
-  const roofTex = makeRoofTexture(4, 2);
+  const roofTex = makeRoofTexture(37, 0x8f4030, 4, 2);
   const roofMat = new THREE.MeshStandardMaterial({
     map: roofTex,
     bumpMap: roofTex,
@@ -1073,7 +1397,7 @@ export function createWindmill(labelLines) {
   const roof = mesh(new THREE.ConeGeometry(2.8, 2.6, 24), roofMat, 0, 12.2, 0);
   group.add(tower, roof);
 
-  const plankTex = makePlankTexture(1, 1);
+  const plankTex = makePlankTexture(23, 1, 1);
   const doorMat = new THREE.MeshStandardMaterial({
     map: plankTex,
     bumpMap: plankTex,
@@ -1224,19 +1548,21 @@ export function createMountain(label) {
   sign.castShadow = true;
   group.add(sign);
 
-  // Torches flanking the banner (emissive flames animated by caller).
+  // Torches flanking the banner, with real warm light for dusk.
   const flames = [];
   for (const side of [-1, 1]) {
     const pole = mesh(new THREE.CylinderGeometry(0.18, 0.24, 5, 8), trim, side * 17.5, 21.5, 22.2);
     const flame = mesh(
       new THREE.ConeGeometry(0.65, 1.6, 8),
-      mat(0xffa028, { emissive: 0xff8c1a, emissiveIntensity: 2.2 }),
+      mat(0xffa028, { emissive: 0xff8c1a, emissiveIntensity: 2.6 }),
       side * 17.5,
       24.8,
       22.2
     );
+    const glow = new THREE.PointLight(0xff9a3c, 26, 40, 2);
+    glow.position.set(side * 17.5, 25.2, 23);
     flames.push(flame);
-    group.add(pole, flame);
+    group.add(pole, flame, glow);
   }
 
   const update = (t) => {
@@ -1252,58 +1578,157 @@ export function createMountain(label) {
 // ---------------------------------------------------------------------------
 // Scenery
 // ---------------------------------------------------------------------------
+const ROOF_COLORS = [0x8f4030, 0x5c6470, 0x6d5638, 0x7a4a5a];
+const PLASTER_TINTS = ["#ddd2ba", "#d8cdb0", "#cfd2b8", "#dcc8b4", "#d4cabc"];
+
 export function createHouse(rng) {
   const group = new THREE.Group();
-  const w = 3 + rng() * 1.5;
-  const d = 2.6 + rng() * 1.2;
-  const h = 2.2 + rng() * 0.6;
+  const seed = Math.floor(rng() * 1e6) + 7;
+  const w = 2.8 + rng() * 1.9;
+  const d = 2.4 + rng() * 1.5;
+  const h = 2.1 + rng() * 0.9;
+  const stoneBase = rng() > 0.6;
+  const gable = rng() > 0.45;
 
-  const plasterTex = makePlasterTexture();
-  const wallMat = new THREE.MeshStandardMaterial({
-    map: plasterTex,
-    bumpMap: plasterTex,
-    bumpScale: 0.5,
-    roughness: 0.92,
-  });
+  // Walls: unique plaster tint + beam layout, or a stone-block cottage.
+  let wallMat;
+  if (stoneBase) {
+    const stoneTex = makeStoneTexture(seed, 2, 2);
+    wallMat = new THREE.MeshStandardMaterial({
+      map: stoneTex,
+      bumpMap: stoneTex,
+      bumpScale: 0.55,
+      roughness: 0.92,
+    });
+  } else {
+    const plasterTex = makePlasterTexture(seed, PLASTER_TINTS[Math.floor(rng() * PLASTER_TINTS.length)]);
+    wallMat = new THREE.MeshStandardMaterial({
+      map: plasterTex,
+      bumpMap: plasterTex,
+      bumpScale: 0.5,
+      roughness: 0.92,
+    });
+  }
   group.add(mesh(new THREE.BoxGeometry(w, h, d), wallMat, 0, h / 2, 0));
 
-  const roofTex = makeRoofTexture(4, 1);
+  const roofColor = ROOF_COLORS[Math.floor(rng() * ROOF_COLORS.length)];
+  const roofTex = makeRoofTexture(seed + 1, roofColor, 4, 1);
   const roofMat = new THREE.MeshStandardMaterial({
     map: roofTex,
     bumpMap: roofTex,
     bumpScale: 0.5,
     roughness: 0.85,
   });
-  const roof = mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.82, 1.8, 4), roofMat, 0, h + 0.9, 0);
-  roof.rotation.y = Math.PI / 4;
-  group.add(roof);
 
-  const plankTex = makePlankTexture(1, 1);
+  if (gable) {
+    // Triangular prism roof with overhang.
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2 - 0.35, 0);
+    shape.lineTo(w / 2 + 0.35, 0);
+    shape.lineTo(0, 1.3 + rng() * 0.5);
+    shape.closePath();
+    const roofGeo = new THREE.ExtrudeGeometry(shape, { depth: d + 0.5, bevelEnabled: false });
+    roofGeo.translate(0, 0, -(d + 0.5) / 2);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.castShadow = true;
+    roof.position.y = h;
+    group.add(roof);
+  } else {
+    const roof = mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.82, 1.6 + rng() * 0.5, 4), roofMat, 0, h + 0.85, 0);
+    roof.rotation.y = Math.PI / 4;
+    group.add(roof);
+  }
+
+  const plankTex = makePlankTexture(seed + 2, 1, 1);
   const doorMat = new THREE.MeshStandardMaterial({
     map: plankTex,
     bumpMap: plankTex,
     bumpScale: 0.4,
     roughness: 0.9,
   });
-  group.add(mesh(new THREE.BoxGeometry(0.7, 1.3, 0.15), doorMat, 0, 0.65, d / 2 + 0.02));
+  const doorX = (rng() - 0.5) * w * 0.4;
+  group.add(mesh(new THREE.BoxGeometry(0.7, 1.3, 0.15), doorMat, doorX, 0.65, d / 2 + 0.02));
 
-  // Warm window.
-  const windowMat = mat(0xf5d08a, { emissive: 0xd98f2b, emissiveIntensity: 0.9 });
-  group.add(mesh(new THREE.BoxGeometry(0.5, 0.5, 0.1), windowMat, w * 0.28, h * 0.55, d / 2 + 0.02));
+  // Warm windows glowing at dusk (1–2, varied placement).
+  const windowMat = mat(0xf5d08a, { emissive: 0xe89a3c, emissiveIntensity: 1.4 });
+  const windowCount = 1 + Math.floor(rng() * 2);
+  for (let i = 0; i < windowCount; i++) {
+    const side = rng() > 0.5 ? 1 : -1;
+    group.add(
+      mesh(new THREE.BoxGeometry(0.48, 0.48, 0.1), windowMat, side * w * (0.2 + rng() * 0.12), h * (0.45 + rng() * 0.2), d / 2 + 0.02)
+    );
+  }
 
-  // Chimney.
-  group.add(mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), mat(0x8a8a90, { roughness: 0.95 }), w * 0.3, h + 1, -d * 0.2));
+  // Chimney on a random corner.
+  group.add(
+    mesh(
+      new THREE.BoxGeometry(0.4, 1.1 + rng() * 0.5, 0.4),
+      mat(0x83838a, { roughness: 0.95, bumpMap: bumps().noise, bumpScale: 0.4 }),
+      (rng() > 0.5 ? 1 : -1) * w * 0.3,
+      h + 0.9,
+      -d * 0.2
+    )
+  );
 
+  return group;
+}
+
+// Village well: stone ring, A-frame posts, little roof, rope and bucket.
+export function createWell() {
+  const group = new THREE.Group();
+  const stoneTex = makeStoneTexture(777, 3, 1);
+  const stoneMat = new THREE.MeshStandardMaterial({
+    map: stoneTex,
+    bumpMap: stoneTex,
+    bumpScale: 0.6,
+    roughness: 0.95,
+  });
+  const ring = mesh(new THREE.CylinderGeometry(0.9, 1.0, 0.8, 16, 1, true), stoneMat, 0, 0.4, 0);
+  ring.material.side = THREE.DoubleSide;
+  const rim = mesh(new THREE.TorusGeometry(0.92, 0.1, 8, 20), stoneMat, 0, 0.82, 0);
+  rim.rotation.x = Math.PI / 2;
+  const water = mesh(
+    new THREE.CircleGeometry(0.82, 20),
+    mat(0x1c4657, { roughness: 0.1, metalness: 0, envMapIntensity: 1.4 }),
+    0,
+    0.35,
+    0
+  );
+  water.rotation.x = -Math.PI / 2;
+
+  const woodMat = mat(COLORS.woodDark, { roughness: 0.95, bumpMap: bumps().noise, bumpScale: 0.4 });
+  const postGeo = new THREE.CylinderGeometry(0.07, 0.09, 1.9, 8);
+  group.add(mesh(postGeo, woodMat, -0.85, 1.3, 0));
+  group.add(mesh(postGeo, woodMat, 0.85, 1.3, 0));
+  const crossbar = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.9, 8), woodMat, 0, 2.1, 0);
+  crossbar.rotation.z = Math.PI / 2;
+  group.add(crossbar);
+  const roofTex = makeRoofTexture(778, 0x6d5638, 3, 1);
+  const wellRoof = mesh(
+    new THREE.ConeGeometry(1.35, 0.75, 4),
+    new THREE.MeshStandardMaterial({ map: roofTex, bumpMap: roofTex, bumpScale: 0.4, roughness: 0.9 }),
+    0,
+    2.75,
+    0
+  );
+  wellRoof.rotation.y = Math.PI / 4;
+  const rope = mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.9, 6), mat(0xa8905e), 0, 1.65, 0);
+  const bucket = mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.22, 10), woodMat, 0, 1.1, 0);
+
+  group.add(ring, rim, water, wellRoof, rope, bucket);
   return group;
 }
 
 export function createCloud(rng) {
   const group = new THREE.Group();
+  // Sunset-lit puffs: warm tint with a faint ember glow on the underside.
   const cloudMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    color: 0xf5cdae,
+    emissive: 0xb45a2e,
+    emissiveIntensity: 0.12,
     roughness: 1,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.78,
   });
   const puffs = 3 + Math.floor(rng() * 3);
   for (let i = 0; i < puffs; i++) {

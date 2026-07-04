@@ -71,14 +71,13 @@ function smooth01(t) {
   return c * c * (3 - 2 * c);
 }
 
-// Distance from (x, z) to the river polyline plus the closest point on it.
-export function riverInfo(x, z) {
+function polylineInfo(path, x, z) {
   let best = Infinity;
   let bx = 0;
   let bz = 0;
-  for (let i = 0; i < RIVER_PATH.length - 1; i++) {
-    const [ax, az] = RIVER_PATH[i];
-    const [cx, cz] = RIVER_PATH[i + 1];
+  for (let i = 0; i < path.length - 1; i++) {
+    const [ax, az] = path[i];
+    const [cx, cz] = path[i + 1];
     const dx = cx - ax;
     const dz = cz - az;
     const lenSq = dx * dx + dz * dz;
@@ -94,6 +93,35 @@ export function riverInfo(x, z) {
     }
   }
   return { dist: Math.sqrt(best), x: bx, z: bz };
+}
+
+// Distance from (x, z) to the river polyline plus the closest point on it.
+export function riverInfo(x, z) {
+  return polylineInfo(RIVER_PATH, x, z);
+}
+
+// Winding dirt trail: spawn → village → south toward the mountain banner,
+// with a spur to the windmill.
+export const TRAIL_PATH = [
+  [0, 34],
+  [2, 18],
+  [-2, 2],
+  [4, -16],
+  [0, -38],
+  [-6, -60],
+  [-2, -82],
+];
+export const TRAIL_SPUR = [
+  [4, -16],
+  [20, -28],
+  [34, -38],
+];
+
+export function distanceToTrail(x, z) {
+  return Math.min(
+    polylineInfo(TRAIL_PATH, x, z).dist,
+    polylineInfo(TRAIL_SPUR, x, z).dist
+  );
 }
 
 // Rolling terrain before the river is carved into it.
@@ -131,12 +159,14 @@ export function distanceToWater(x, z) {
 }
 
 // -------------------------------------------------------------- terrain mesh
-const GRASS_A = new THREE.Color(0x67a04b);
-const GRASS_B = new THREE.Color(0x4a7f38);
-const GRASS_C = new THREE.Color(0x7fae57);
+// Muted, golden-hour meadow palette.
+const GRASS_A = new THREE.Color(0x74884a);
+const GRASS_B = new THREE.Color(0x566d3a);
+const GRASS_C = new THREE.Color(0x8f9455);
 const DIRT = new THREE.Color(0x8d6f4a);
 const SAND = new THREE.Color(0xb5a06d);
 const RIVERBED = new THREE.Color(0x6d5c40);
+const TRAIL_DIRT = new THREE.Color(0x9a7a52);
 
 function makeGroundDetailTexture() {
   const size = 128;
@@ -184,6 +214,12 @@ export function buildTerrainMesh() {
     else if (patch < -0.15) color.lerp(GRASS_B, smooth01((-patch - 0.15) / 0.3));
     const dirtNoise = fbm(x * 0.03 - 60, z * 0.03 + 33, 3);
     if (dirtNoise > 0.34) color.lerp(DIRT, smooth01((dirtNoise - 0.34) / 0.22) * 0.65);
+
+    const trail = distanceToTrail(x, z);
+    if (trail < 3.2) {
+      const worn = smooth01(1 - trail / 3.2);
+      color.lerp(TRAIL_DIRT, worn * worn * 0.95);
+    }
 
     const water = distanceToWater(x, z);
     if (water < 4.5) {
