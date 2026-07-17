@@ -26,10 +26,12 @@ export function setupSky(renderer, scene) {
   sky.scale.setScalar(2000);
 
   const uniforms = sky.material.uniforms;
-  uniforms.turbidity.value = 10;
+  // Higher turbidity + a small, tight mie halo keep the low sun from
+  // blowing out the whole western sky at golden hour.
+  uniforms.turbidity.value = 13;
   uniforms.rayleigh.value = 3.1;
-  uniforms.mieCoefficient.value = 0.008;
-  uniforms.mieDirectionalG.value = 0.8;
+  uniforms.mieCoefficient.value = 0.0035;
+  uniforms.mieDirectionalG.value = 0.6;
 
   // Low western sun for golden hour.
   const elevation = THREE.MathUtils.degToRad(13);

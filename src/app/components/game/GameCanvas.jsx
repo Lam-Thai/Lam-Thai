@@ -89,7 +89,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.42;
+    renderer.toneMappingExposure = 0.38;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.touchAction = "none";
@@ -121,9 +121,9 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     composer.addPass(new RenderPass(scene, camera));
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(container.clientWidth, container.clientHeight),
-      0.14,
+      0.1,
       0.5,
-      0.88
+      0.9
     );
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
