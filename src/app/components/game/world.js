@@ -588,6 +588,9 @@ export function createSignboard(title, subtitle) {
 // ---------------------------------------------------------------------------
 
 // Limb: capsule segments with a joint sphere, pivoting from the top.
+// The lower segment hangs from its own pivot at the joint (exposed as
+// userData.knee) so characters can articulate knees and elbows; it rests
+// at zero rotation, so limbs that never bend it look exactly as before.
 function limb(material, upperR, lowerR, upperLen, lowerLen) {
   const pivot = new THREE.Group();
   const upper = mesh(
@@ -598,14 +601,18 @@ function limb(material, upperR, lowerR, upperLen, lowerLen) {
     0
   );
   const joint = mesh(new THREE.SphereGeometry(upperR * 1.15, 12, 10), material, 0, -upperLen, 0);
+  const knee = new THREE.Group();
+  knee.position.y = -upperLen;
   const lower = mesh(
     new THREE.CapsuleGeometry(lowerR, lowerLen, 4, 12),
     material,
     0,
-    -upperLen - lowerLen / 2,
+    -lowerLen / 2,
     0
   );
-  pivot.add(upper, joint, lower);
+  knee.add(lower);
+  pivot.add(upper, joint, knee);
+  pivot.userData.knee = knee;
   return pivot;
 }
 
@@ -706,29 +713,34 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false, seed = 7 
   capePivot.add(cape);
   capePivot.rotation.x = 0.14;
 
-  // Legs / arms.
+  // Legs / arms. Boots, gauntlets and gear hang from the knee/elbow pivots
+  // so they follow the lower limb when it bends.
   const leftLeg = limb(chain, 0.14, 0.12, 0.36, 0.34);
   leftLeg.position.set(-0.19, 0.78, 0);
   const rightLeg = limb(chain, 0.14, 0.12, 0.36, 0.34);
   rightLeg.position.set(0.19, 0.78, 0);
+  const leftKnee = leftLeg.userData.knee;
+  const rightKnee = rightLeg.userData.knee;
   const bootGeo = new THREE.SphereGeometry(0.14, 12, 8);
-  for (const leg of [leftLeg, rightLeg]) {
-    const boot = mesh(bootGeo, steel, 0, -0.72, 0.06);
+  for (const knee of [leftKnee, rightKnee]) {
+    const boot = mesh(bootGeo, steel, 0, -0.36, 0.06);
     boot.scale.set(1, 0.7, 1.5);
-    leg.add(boot);
+    knee.add(boot);
   }
 
   const leftArm = limb(chain, 0.11, 0.09, 0.3, 0.3);
   leftArm.position.set(-0.52, 1.62, 0);
   const rightArm = limb(chain, 0.11, 0.09, 0.3, 0.3);
   rightArm.position.set(0.52, 1.62, 0);
+  const leftElbow = leftArm.userData.knee;
+  const rightElbow = rightArm.userData.knee;
   const gauntletGeo = new THREE.SphereGeometry(0.11, 12, 8);
-  leftArm.add(mesh(gauntletGeo, steel, 0, -0.62, 0));
-  rightArm.add(mesh(gauntletGeo, steel, 0, -0.62, 0));
+  leftElbow.add(mesh(gauntletGeo, steel, 0, -0.32, 0));
+  rightElbow.add(mesh(gauntletGeo, steel, 0, -0.32, 0));
 
   // Sword: tapered blade with tip, guard, wrapped grip, pommel.
   const sword = new THREE.Group();
-  sword.position.set(0, -0.62, 0.08);
+  sword.position.set(0, -0.32, 0.08); // hangs from the elbow pivot
   const bladeGeo = new THREE.BoxGeometry(0.075, 0.85, 0.02);
   {
     const pos = bladeGeo.attributes.position;
@@ -745,7 +757,7 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false, seed = 7 
   sword.add(mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.16, 8), mat(0x3d2817, { bumpMap: b.cloth, bumpScale: 0.3 }), 0, -0.03, 0.16));
   sword.add(mesh(new THREE.SphereGeometry(0.045, 10, 8), metalMat(COLORS.gold), 0, -0.13, 0.16));
   sword.rotation.x = Math.PI / 2.4;
-  rightArm.add(sword);
+  rightElbow.add(sword);
 
   // Heater shield with boss and studs.
   const shieldShape = new THREE.Shape();
@@ -767,7 +779,8 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false, seed = 7 
   const shieldFace = new THREE.Group();
   shieldFace.add(shield);
   shieldFace.add(mesh(new THREE.SphereGeometry(0.07, 10, 8), metalMat(COLORS.gold), -0.2, -0.44, 0.06));
-  leftArm.add(shieldFace);
+  shieldFace.position.y = 0.3; // strapped to the forearm, pivoting at the elbow
+  leftElbow.add(shieldFace);
 
   group.add(
     torso, ridge, skirt, tabard, belt, head, helm, nasal, leftCheek, rightCheek, plume,
@@ -780,20 +793,54 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false, seed = 7 
 
   const update = (t, a, c) => {
     if (isPlayer) {
-      const walkSpeed = a || 0;
-      // Eased gait: sinusoid with a softened knee return, counter-swung arms,
-      // and a light forward lean while running.
-      const gait = Math.sin(t * 9);
-      const swing = walkSpeed > 0.01 ? gait * Math.abs(gait) * 0.62 * Math.min(walkSpeed, 1) : 0;
-      leftLeg.rotation.x = swing;
-      rightLeg.rotation.x = -swing;
-      leftArm.rotation.x = -swing * 0.7;
-      rightArm.rotation.x = swing * 0.7;
-      group.rotation.x = walkSpeed * 0.07;
-      group.rotation.z = Math.sin(t * 4.5) * walkSpeed * 0.02;
-      capePivot.rotation.x = 0.14 + walkSpeed * 0.4 + Math.sin(t * 3) * 0.04;
+      // The movement loop drives the player with { walk, run, phase }:
+      // walk/run are eased 0..1 blends and phase is the accumulated gait
+      // angle, so cadence can change between walk and sprint without pops.
+      const s = typeof a === "object" && a !== null ? a : { walk: a || 0 };
+      const walk = Math.min(s.walk ?? 0, 1);
+      const run = Math.min(s.run ?? 0, 1);
+      const phase = s.phase ?? t * 9;
+
+      const stride = Math.sin(phase);
+      const strideEase = stride * Math.abs(stride); // softened reversal
+      // Hips swing wider at a sprint...
+      const hipAmp = (0.5 + run * 0.34) * walk;
+      leftLeg.rotation.x = strideEase * hipAmp;
+      rightLeg.rotation.x = -strideEase * hipAmp;
+      // ...and the knees lift much higher, bending only through the swing
+      // phase of each leg's cycle (a knee never bends backwards).
+      const kneeAmp = (0.55 + run * 0.8) * walk;
+      leftKnee.rotation.x = Math.max(0, Math.sin(phase + 2.3)) * kneeAmp;
+      rightKnee.rotation.x = Math.max(0, Math.sin(phase + Math.PI + 2.3)) * kneeAmp;
+
+      // Arms counter-swing the legs; elbows hang loose on a walk and pump
+      // high at a sprint, flaring slightly outward.
+      const armAmp = (0.4 + run * 0.42) * walk;
+      leftArm.rotation.x = -strideEase * armAmp;
+      rightArm.rotation.x = strideEase * armAmp;
+      const elbowBend =
+        0.18 + walk * 0.14 + run * 0.85;
+      leftElbow.rotation.x =
+        -(elbowBend + Math.max(0, Math.sin(phase + Math.PI)) * 0.18 * walk);
+      rightElbow.rotation.x =
+        -(elbowBend + Math.max(0, Math.sin(phase)) * 0.18 * walk);
+      leftArm.rotation.z = run * 0.18;
+      rightArm.rotation.z = -run * 0.18;
+
+      // Posture: light lean walking, a committed forward lean sprinting,
+      // with a gait-synced weight roll that flattens out at speed.
+      group.rotation.x = walk * (0.05 + run * 0.13);
+      group.rotation.z = stride * 0.028 * walk * (1 - run * 0.45);
+      head.rotation.x = -walk * (0.03 + run * 0.06); // keep the chin up
+
+      capePivot.rotation.x =
+        0.14 +
+        walk * 0.32 +
+        run * 0.5 +
+        Math.sin(t * 3) * 0.04 +
+        Math.abs(stride) * 0.06 * walk;
       // idle breathing
-      const breathe = 1 + Math.sin(t * 1.4) * 0.012 * (1 - walkSpeed);
+      const breathe = 1 + Math.sin(t * 1.4) * 0.012 * (1 - walk);
       torso.scale.set(1, breathe, 1);
     } else {
       const delta = a;

@@ -365,6 +365,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       z: PLAYER_SPAWN[1],
       yaw: Math.PI, // face the world (negative z)
       walk: 0,
+      run: 0, // eased sprint blend
+      gaitPhase: 0, // accumulated stride angle; rate follows move speed
       groundY: terrainHeight(PLAYER_SPAWN[0], PLAYER_SPAWN[1]),
     };
 
@@ -632,14 +634,31 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         playerState.walk = Math.max(0, playerState.walk - delta * 8);
       }
 
+      // Sprint blend + gait cadence. The stride phase accumulates at a rate
+      // tied to move speed so feet keep time with the ground, and speeding
+      // up never pops the animation.
+      const runTarget = moving && keys.run ? 1 : 0;
+      playerState.run += (runTarget - playerState.run) * Math.min(1, delta * 5);
+      if (playerState.walk > 0.02) {
+        playerState.gaitPhase += delta * (8.5 + playerState.run * 3.5);
+      }
+
       player.group.position.set(
         playerState.x,
         playerState.groundY +
-          (playerState.walk > 0.05 ? Math.abs(Math.sin(t * 9)) * 0.12 : 0),
+          (playerState.walk > 0.05
+            ? Math.abs(Math.sin(playerState.gaitPhase)) *
+              (0.05 + playerState.run * 0.09) *
+              Math.min(playerState.walk, 1)
+            : 0),
         playerState.z
       );
       player.group.rotation.y = playerState.yaw;
-      player.update(t, playerState.walk);
+      player.update(t, {
+        walk: playerState.walk,
+        run: playerState.run,
+        phase: playerState.gaitPhase,
+      });
 
       // --- world animation --------------------------------------------------
       // NPC updates receive the player position for look-at behaviour.
