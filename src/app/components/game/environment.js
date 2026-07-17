@@ -429,8 +429,10 @@ function crossedQuadGeometry(width, height) {
 }
 
 // Scatters everything. `isClear(x, z)` guards milestones/landmarks/houses;
-// water and trail proximity are handled internally.
-export function createVegetation(isClear, worldRadius) {
+// water and trail proximity are handled internally. `addObstacle(x, z, r)`
+// registers solid trunks with the collision system so the player can't
+// walk through trees (grass, flowers and other soft flora stay passable).
+export function createVegetation(isClear, worldRadius, addObstacle) {
   const group = new THREE.Group();
   const rng = createRng(90210);
   const timeMaterials = [];
@@ -481,10 +483,12 @@ export function createVegetation(isClear, worldRadius) {
   pineCanopies.receiveShadow = true;
 
   const pinesPlaced = scatter(PINES, 5.5, PINES * 30, (x, z, i) => {
+    const scale = 0.7 + rng() * 1.1;
     setInstance(
       [pineTrunks, pineCanopies], i, x, z,
-      0.7 + rng() * 1.1, rng() * Math.PI * 2, (rng() - 0.5) * 0.1
+      scale, rng() * Math.PI * 2, (rng() - 0.5) * 0.1
     );
+    addObstacle?.(x, z, 0.38 * scale);
     // dusky green with occasional blue-fir tone
     tint.setHSL(0.3 + rng() * 0.13, 0.32 + rng() * 0.2, 0.24 + rng() * 0.12);
     pineCanopies.setColorAt(i, tint);
@@ -512,10 +516,12 @@ export function createVegetation(isClear, worldRadius) {
   oakCanopies.receiveShadow = true;
 
   const oaksPlaced = scatter(OAKS, 5.5, OAKS * 30, (x, z, i) => {
+    const scale = 0.7 + rng() * 0.9;
     setInstance(
       [oakTrunks, oakCanopies], i, x, z,
-      0.7 + rng() * 0.9, rng() * Math.PI * 2, (rng() - 0.5) * 0.12
+      scale, rng() * Math.PI * 2, (rng() - 0.5) * 0.12
     );
+    addObstacle?.(x, z, 0.48 * scale);
     if (rng() > 0.6) {
       // autumn: amber → rust
       tint.setHSL(0.06 + rng() * 0.06, 0.6 + rng() * 0.2, 0.34 + rng() * 0.1);
@@ -548,10 +554,12 @@ export function createVegetation(isClear, worldRadius) {
   birchCanopies.castShadow = true;
 
   const birchesPlaced = scatter(BIRCHES, 5, BIRCHES * 30, (x, z, i) => {
+    const scale = 0.8 + rng() * 0.6;
     setInstance(
       [birchTrunks, birchCanopies], i, x, z,
-      0.8 + rng() * 0.6, rng() * Math.PI * 2, (rng() - 0.5) * 0.14
+      scale, rng() * Math.PI * 2, (rng() - 0.5) * 0.14
     );
+    addObstacle?.(x, z, 0.24 * scale);
     // golden birch foliage
     tint.setHSL(0.11 + rng() * 0.05, 0.55 + rng() * 0.2, 0.42 + rng() * 0.12);
     birchCanopies.setColorAt(i, tint);
@@ -580,7 +588,9 @@ export function createVegetation(isClear, worldRadius) {
   const deads = new THREE.InstancedMesh(deadGeo, deadMat, DEADS);
   deads.castShadow = true;
   deads.count = scatter(DEADS, 4, DEADS * 30, (x, z, i) => {
-    setInstance([deads], i, x, z, 0.8 + rng() * 0.8, rng() * Math.PI * 2, (rng() - 0.5) * 0.2);
+    const scale = 0.8 + rng() * 0.8;
+    setInstance([deads], i, x, z, scale, rng() * Math.PI * 2, (rng() - 0.5) * 0.2);
+    addObstacle?.(x, z, 0.3 * scale);
   });
   group.add(deads);
 

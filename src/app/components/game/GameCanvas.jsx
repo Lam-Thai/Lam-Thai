@@ -39,12 +39,16 @@ import {
   createBirds,
   createFireflies,
 } from "./environment";
+import { createColliderSet } from "./collision";
 
 // Warm golden-hour haze.
 const FOG_COLOR = 0xd9a077;
 const WALK_SPEED = 9;
 const RUN_SPEED = 15;
 const MOUNTAIN_KEEP_OUT = 38;
+const PLAYER_RADIUS = 0.45;
+// Body footprint per character type, for collision.
+const CHARACTER_RADII = { knight: 0.7, villager: 0.65, monster: 1.05, dragon: 2.3 };
 
 /**
  * Imperative three.js scene wrapped in a React component.
@@ -155,6 +159,10 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     // Animated entities: fn(elapsedTime, delta)
     const updaters = [];
 
+    // Solid props the player cannot walk through (characters, buildings,
+    // trees, rocks…). Registered once as the world is built.
+    const colliders = createColliderSet();
+
     // ---------------------------------------------------- milestone characters
     MILESTONES.forEach((milestone, index) => {
       const build = CHARACTER_BUILDERS[milestone.character];
@@ -171,6 +179,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         href: milestone.href,
         title: milestone.title,
       });
+      // Posts sit at local x = ±1.05 under a 2.6-wide panel.
+      colliders.addBox(x, z, 1.35, 0.3, toCenter);
 
       // Character stands beside the board (alternating sides), facing the
       // same way as the sign — like a herald presenting their quest.
@@ -185,6 +195,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       npc.group.userData.homeYaw = toCenter;
       scene.add(npc.group);
       updaters.push(npc.update);
+      colliders.addCircle(nx, nz, CHARACTER_RADII[milestone.character] ?? 0.8);
     });
 
     // -------------------------------------------------------------- windmill
@@ -198,6 +209,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       href: LANDMARKS.windmill.href,
       title: LANDMARKS.windmill.title,
     });
+    // Tower base is 3.4 wide; keep clear of the door/sign side too.
+    colliders.addCircle(wx, wz, 3.7);
 
     // -------------------------------------------------------------- mountain
     const mountain = createMountain(LANDMARKS.mountain.label);
@@ -209,6 +222,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       href: LANDMARKS.mountain.href,
       title: LANDMARKS.mountain.title,
     });
+    colliders.addCircle(mx, mz, MOUNTAIN_KEEP_OUT);
 
     // --------------------------------------------------------------- scenery
     const rng = createRng(20260703);
@@ -227,7 +241,11 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     const isClear = (x, z) =>
       keepOut.every((k) => (x - k.x) ** 2 + (z - k.z) ** 2 > k.r * k.r);
 
-    const vegetation = createVegetation(isClear, WORLD_RADIUS - 6);
+    const vegetation = createVegetation(
+      isClear,
+      WORLD_RADIUS - 6,
+      colliders.addCircle
+    );
     scene.add(vegetation.group);
     updaters.push(
       vegetation.update,
@@ -243,14 +261,25 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     placeOnGround(well, 6, 9);
     well.rotation.y = 0.6;
     scene.add(well);
+    colliders.addCircle(6, 9, 1.15);
 
+    const footprint = new THREE.Box3();
     for (let i = 0; i < 16; i++) {
       const x = (rng() - 0.5) * 2 * (WORLD_RADIUS - 10);
       const z = (rng() - 0.5) * 2 * (WORLD_RADIUS - 10);
       if (!isClear(x, z) || distanceToWater(x, z) < 3) continue;
       const rock = createRock(rng);
+      footprint.setFromObject(rock);
       placeOnGround(rock, x, z, 0.1);
       scene.add(rock);
+      colliders.addCircle(
+        x,
+        z,
+        Math.max(
+          footprint.max.x - footprint.min.x,
+          footprint.max.z - footprint.min.z
+        ) * 0.42
+      );
     }
 
     // Stepping stones across the ford toward the western knight.
@@ -272,9 +301,19 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       [22, -4],
     ]) {
       const house = createHouse(rng);
+      // Measure while still axis-aligned at the origin, then register an
+      // oriented box matching the final yaw.
+      footprint.setFromObject(house);
       placeOnGround(house, hx, hz);
       house.rotation.y = Math.atan2(-hx, -hz);
       scene.add(house);
+      colliders.addBox(
+        hx,
+        hz,
+        (footprint.max.x - footprint.min.x) / 2,
+        (footprint.max.z - footprint.min.z) / 2,
+        house.rotation.y
+      );
     }
 
     const clouds = [];
@@ -485,17 +524,12 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
           nx *= scale;
           nz *= scale;
         }
-        // Keep the player off the mountain itself.
-        const mdx = nx - mx;
-        const mdz = nz - mz;
-        const mDist = Math.hypot(mdx, mdz);
-        if (mDist < MOUNTAIN_KEEP_OUT && mDist > 0.001) {
-          nx = mx + (mdx / mDist) * MOUNTAIN_KEEP_OUT;
-          nz = mz + (mdz / mDist) * MOUNTAIN_KEEP_OUT;
-        }
+        // Push out of solid props (characters, buildings, trees, the
+        // mountain…) so the player slides along them instead of clipping.
+        const resolved = colliders.resolve(nx, nz, PLAYER_RADIUS);
 
-        playerState.x = nx;
-        playerState.z = nz;
+        playerState.x = resolved.x;
+        playerState.z = resolved.z;
         const targetYaw = Math.atan2(moveDir.x, moveDir.z);
         let dyaw = targetYaw - playerState.yaw;
         while (dyaw > Math.PI) dyaw -= Math.PI * 2;
