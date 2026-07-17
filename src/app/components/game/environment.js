@@ -142,7 +142,9 @@ export function createRiverWater() {
     uvs.push(0, t * 40, 1, t * 40);
     if (i < samples) {
       const a = i * 2;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      // Wound so the face normals point up — the material is single-sided,
+      // so the reverse winding leaves the whole river invisible from above.
+      indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
     }
   }
   const geometry = new THREE.BufferGeometry();
