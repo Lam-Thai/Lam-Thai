@@ -677,6 +677,11 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
 
       // --- jumping ---------------------------------------------------------
       // Space launches off the ground; a second Space mid-air double-jumps.
+      // The touch JUMP button queues through the shared input ref.
+      if (keys.jump) {
+        keys.jump = false;
+        if (!pausedRef.current) jumpQueued = true;
+      }
       if (jumpQueued) {
         jumpQueued = false;
         if (!playerState.airborne) {

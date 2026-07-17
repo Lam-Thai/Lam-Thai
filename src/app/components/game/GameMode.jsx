@@ -10,6 +10,7 @@ const EMPTY_INPUT = {
   left: false,
   right: false,
   run: false,
+  jump: false, // one-shot; consumed by the game loop
 };
 
 export default function GameMode() {
@@ -78,9 +79,10 @@ export default function GameMode() {
         </p>
       </div>
 
-      {/* Controls help card */}
+      {/* Controls help card (keyboard/mouse only — touch has the on-screen
+          buttons, so hide it on coarse pointers) */}
       {showHelp && (
-        <div className="absolute bottom-4 right-4 z-20 max-w-xs rounded-xl bg-black/60 border border-amber-500/40 backdrop-blur-sm p-4 text-sm text-zinc-200">
+        <div className="absolute bottom-4 right-4 z-20 max-w-xs rounded-xl bg-black/60 border border-amber-500/40 backdrop-blur-sm p-4 text-sm text-zinc-200 [@media(pointer:coarse)]:hidden">
           <div className="flex items-start justify-between gap-3 mb-2">
             <h2 className="text-amber-300 font-bold">How to play</h2>
             <button
@@ -122,7 +124,7 @@ export default function GameMode() {
         <button
           type="button"
           onClick={() => setShowHelp(true)}
-          className="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-amber-500/40 text-amber-300 font-bold backdrop-blur-sm hover:bg-black/80"
+          className="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-amber-500/40 text-amber-300 font-bold backdrop-blur-sm hover:bg-black/80 [@media(pointer:coarse)]:hidden"
           aria-label="Show controls help"
         >
           ?
@@ -144,6 +146,31 @@ export default function GameMode() {
         </button>
         <button type="button" className={dpadButton} aria-label="Move right" {...holdKey("right")}>
           ▶
+        </button>
+      </div>
+
+      {/* Touch action buttons: hold RUN to sprint, tap JUMP (twice for a
+          double jump). Right side, under the thumb. */}
+      <div className="absolute bottom-6 right-6 z-20 hidden [@media(pointer:coarse)]:flex items-end gap-3">
+        <button
+          type="button"
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-black/50 border border-amber-500/40 text-amber-200 text-xs font-bold tracking-widest select-none touch-none active:bg-amber-500/30 backdrop-blur-sm"
+          aria-label="Hold to sprint"
+          {...holdKey("run")}
+        >
+          RUN
+        </button>
+        <button
+          type="button"
+          className="flex items-center justify-center w-16 h-16 rounded-full bg-black/50 border border-amber-500/40 text-amber-200 text-xs font-bold tracking-widest select-none touch-none active:bg-amber-500/30 backdrop-blur-sm"
+          aria-label="Jump (tap twice to double jump)"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            inputRef.current.jump = true;
+          }}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          JUMP
         </button>
       </div>
 
