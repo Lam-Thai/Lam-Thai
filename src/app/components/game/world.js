@@ -1123,9 +1123,11 @@ export function createMonster(seed = 3) {
   // Long hanging arms with clawed hands; thick legs with flat feet.
   const arms = [];
   for (const side of [-1, 1]) {
-    const arm = limb(bodyMat, 0.16, 0.13, 0.42, 0.4);
-    arm.position.set(side * 0.78, 1.62, 0.12);
-    arm.rotation.z = -side * 0.18;
+    const arm = limb(bodyMat, 0.18, 0.14, 0.42, 0.4);
+    // Pivot outside the torso and flared outward — tucked inward they
+    // disappear into the body's bulk.
+    arm.position.set(side * 0.92, 1.68, 0.12);
+    arm.rotation.z = side * 0.3;
     const hand = mesh(new THREE.SphereGeometry(0.16, 12, 9), hideMat, 0, -0.9, 0.02);
     hand.scale.set(1, 0.8, 1.2);
     arm.add(hand);
@@ -1142,6 +1144,17 @@ export function createMonster(seed = 3) {
     }
     group.add(arm);
     arms.push(arm);
+
+    // Deltoid mass bridging torso and arm so the shoulder reads as one piece.
+    const shoulder = mesh(
+      new THREE.SphereGeometry(0.3, 14, 10),
+      bodyMat,
+      side * 0.8,
+      1.78,
+      0.1
+    );
+    shoulder.scale.set(1.15, 0.9, 1);
+    group.add(shoulder);
 
     const leg = limb(bodyMat, 0.18, 0.15, 0.3, 0.26);
     leg.position.set(side * 0.34, 0.62, 0);
