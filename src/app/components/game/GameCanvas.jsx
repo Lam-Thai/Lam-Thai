@@ -225,13 +225,13 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     colliders.addCircle(mx, mz, MOUNTAIN_KEEP_OUT);
 
     // ---------------------------------------------------------------- bridge
-    // Wooden arch bridge over the river ford toward the western knight
-    // (replaces the old stepping stones). The deck runs along local x,
-    // perpendicular to the river's flow at the crossing.
+    // Stone arch bridge over the river ford toward the western knight.
+    // The deck runs along local x, perpendicular to the river's flow at the
+    // crossing.
     const bridgeSpanDir = new THREE.Vector2(22, -5).normalize();
     const BRIDGE_POS = { x: -30.3, z: -16 };
-    const BRIDGE_HALF_SPAN = 5.7;
-    const BRIDGE_HALF_WIDTH = 1.2;
+    const BRIDGE_HALF_SPAN = 7.5;
+    const BRIDGE_HALF_WIDTH = 1.7;
     const bridgeYaw = Math.atan2(-bridgeSpanDir.y, bridgeSpanDir.x);
     const bridgeCos = Math.cos(bridgeYaw);
     const bridgeSin = Math.sin(bridgeYaw);
@@ -249,7 +249,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     const bridge = createBridge({
       span: BRIDGE_HALF_SPAN * 2,
       width: BRIDGE_HALF_WIDTH * 2,
-      arch: 0.9,
+      arch: 1.2,
       tilt: (bridgeEndAY - bridgeEndBY) / 2,
     });
     bridge.group.position.set(BRIDGE_POS.x, bridgeBaseY, BRIDGE_POS.z);
@@ -261,8 +261,8 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     const rng = createRng(20260703);
     const keepOut = [
       // bridge approaches
-      { x: bridgeEndA.x, z: bridgeEndA.z, r: 2.6 },
-      { x: bridgeEndB.x, z: bridgeEndB.z, r: 2.6 },
+      { x: bridgeEndA.x, z: bridgeEndA.z, r: 3.2 },
+      { x: bridgeEndB.x, z: bridgeEndB.z, r: 3.2 },
       ...MILESTONES.map((m) => ({ x: m.position[0], z: m.position[1], r: 7 })),
       { x: wx, z: wz, r: 10 },
       { x: mx, z: mz, r: 46 },
@@ -556,10 +556,11 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         nx = resolved.x;
         nz = resolved.z;
 
-        // Bridge deck: cross over the river when approaching at deck level;
-        // the riverbed below stays passable. Whichever surface is closer to
-        // the player's current ground height wins, so walking under the
-        // bridge never teleports them on top of it.
+        // Bridge: walk over the deck, wade under the main arch bay — but
+        // never through the stonework. Whichever surface (deck or terrain)
+        // is closer to the player's current ground height wins, so passing
+        // under the arch never teleports them on top; a small step-up rule
+        // makes boarding at the low ends reliable.
         let groundY = terrainHeight(nx, nz);
         const bdx = nx - BRIDGE_POS.x;
         const bdz = nz - BRIDGE_POS.z;
@@ -567,21 +568,53 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         let blz = bdx * bridgeSin + bdz * bridgeCos;
         if (
           Math.abs(blx) < BRIDGE_HALF_SPAN &&
-          Math.abs(blz) < BRIDGE_HALF_WIDTH + 0.3
+          Math.abs(blz) < BRIDGE_HALF_WIDTH + PLAYER_RADIUS
         ) {
           const deckY = bridgeDeckWorldY(blx);
-          if (
+          const stepUp = deckY - groundY;
+          const onDeck =
+            stepUp <= 0.9 ||
             Math.abs(deckY - playerState.groundY) <=
-            Math.abs(groundY - playerState.groundY)
-          ) {
+              Math.abs(groundY - playerState.groundY);
+          if (onDeck) {
             groundY = deckY;
-            // Rails: keep the player from stepping off the side.
-            const railLimit = BRIDGE_HALF_WIDTH - 0.35;
+            // Parapets: keep the player from stepping off the side.
+            const railLimit = BRIDGE_HALF_WIDTH - 0.45;
             const clamped = THREE.MathUtils.clamp(blz, -railLimit, railLimit);
             if (clamped !== blz) {
               blz = clamped;
               nx = BRIDGE_POS.x + blx * bridgeCos + blz * bridgeSin;
               nz = BRIDGE_POS.z - blx * bridgeSin + blz * bridgeCos;
+            }
+          } else {
+            // Below deck level: solid stone unless this is the arch bay
+            // (enough headroom, clear of the piers).
+            let solidCx = null;
+            let solidHx = 0;
+            if (stepUp < 2.2) {
+              solidCx = 0; // low-clearance slice: the whole span blocks
+              solidHx = BRIDGE_HALF_SPAN;
+            } else if (
+              Math.abs(Math.abs(blx) - bridge.pierX) <
+              0.65 + PLAYER_RADIUS
+            ) {
+              solidCx = Math.sign(blx) * bridge.pierX;
+              solidHx = 0.65;
+            }
+            if (solidCx !== null) {
+              // Push out through the nearest face, in bridge-local space.
+              const dx = blx - solidCx;
+              const px = solidHx + PLAYER_RADIUS - Math.abs(dx);
+              const pz = BRIDGE_HALF_WIDTH + PLAYER_RADIUS - Math.abs(blz);
+              let outLx = blx;
+              if (px < pz) {
+                outLx = solidCx + Math.sign(dx || 1) * (solidHx + PLAYER_RADIUS);
+              } else {
+                blz = Math.sign(blz || 1) * (BRIDGE_HALF_WIDTH + PLAYER_RADIUS);
+              }
+              nx = BRIDGE_POS.x + outLx * bridgeCos + blz * bridgeSin;
+              nz = BRIDGE_POS.z - outLx * bridgeSin + blz * bridgeCos;
+              groundY = terrainHeight(nx, nz);
             }
           }
         }
