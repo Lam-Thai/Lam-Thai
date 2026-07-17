@@ -47,6 +47,10 @@ const WALK_SPEED = 9;
 const RUN_SPEED = 15;
 const MOUNTAIN_KEEP_OUT = 38;
 const PLAYER_RADIUS = 0.45;
+// Jump physics: v²/2g ≈ 1.4 units for the first jump, +1.2 for the second.
+const GRAVITY = 24;
+const JUMP_VELOCITY = 8.2;
+const DOUBLE_JUMP_VELOCITY = 7.6;
 // Body footprint per character type, for collision.
 const CHARACTER_RADII = { knight: 0.7, villager: 0.65, monster: 2.15, dragon: 4.8 };
 
@@ -371,6 +375,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     placeOnGround(player.group, PLAYER_SPAWN[0], PLAYER_SPAWN[1]);
     scene.add(player.group);
 
+    const spawnY = terrainHeight(PLAYER_SPAWN[0], PLAYER_SPAWN[1]);
     const playerState = {
       x: PLAYER_SPAWN[0],
       z: PLAYER_SPAWN[1],
@@ -378,7 +383,12 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       walk: 0,
       run: 0, // eased sprint blend
       gaitPhase: 0, // accumulated stride angle; rate follows move speed
-      groundY: terrainHeight(PLAYER_SPAWN[0], PLAYER_SPAWN[1]),
+      groundY: spawnY, // height of the surface underfoot
+      y: spawnY, // actual altitude (leaves groundY while jumping)
+      vy: 0,
+      jumps: 0, // 0 grounded · 1 jumped · 2 double-jumped
+      airborne: false,
+      air: 0, // eased 0..1 blend for the airborne animation pose
     };
 
     // ---------------------------------------------------------------- camera
@@ -426,8 +436,17 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       return tag === "INPUT" || tag === "TEXTAREA" || event.target?.isContentEditable;
     };
 
+    // Set on Space keydown (edge-triggered, so holding the key doesn't
+    // retrigger) and consumed once by the game loop.
+    let jumpQueued = false;
+
     const onKeyDown = (event) => {
       if (pausedRef.current || isTypingTarget(event)) return;
+      if (event.code === "Space") {
+        event.preventDefault();
+        if (!event.repeat) jumpQueued = true;
+        return;
+      }
       const action = KEYMAP[event.code];
       if (!action) return;
       event.preventDefault();
@@ -585,10 +604,12 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         ) {
           const deckY = bridgeDeckWorldY(blx);
           const stepUp = deckY - groundY;
+          // Compare against the player's altitude when airborne so a jump
+          // over the parapet lands on the deck instead of phasing through.
+          const refY = playerState.airborne ? playerState.y : playerState.groundY;
           const onDeck =
             stepUp <= 0.9 ||
-            Math.abs(deckY - playerState.groundY) <=
-              Math.abs(groundY - playerState.groundY);
+            Math.abs(deckY - refY) <= Math.abs(groundY - refY);
           if (onDeck) {
             groundY = deckY;
             // Parapets: keep the player from stepping off the side.
@@ -654,10 +675,40 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         playerState.gaitPhase += delta * (8.5 + playerState.run * 3.5);
       }
 
+      // --- jumping ---------------------------------------------------------
+      // Space launches off the ground; a second Space mid-air double-jumps.
+      if (jumpQueued) {
+        jumpQueued = false;
+        if (!playerState.airborne) {
+          playerState.vy = JUMP_VELOCITY;
+          playerState.jumps = 1;
+          playerState.airborne = true;
+        } else if (playerState.jumps < 2) {
+          playerState.vy = DOUBLE_JUMP_VELOCITY;
+          playerState.jumps = 2;
+        }
+      }
+      if (playerState.airborne) {
+        playerState.vy -= GRAVITY * delta;
+        playerState.y += playerState.vy * delta;
+        // Land on whatever is underfoot now (terrain or bridge deck).
+        if (playerState.vy <= 0 && playerState.y <= playerState.groundY) {
+          playerState.y = playerState.groundY;
+          playerState.vy = 0;
+          playerState.jumps = 0;
+          playerState.airborne = false;
+        }
+      } else {
+        playerState.y = playerState.groundY;
+      }
+      playerState.air +=
+        ((playerState.airborne ? 1 : 0) - playerState.air) *
+        Math.min(1, delta * 10);
+
       player.group.position.set(
         playerState.x,
-        playerState.groundY +
-          (playerState.walk > 0.05
+        playerState.y +
+          (!playerState.airborne && playerState.walk > 0.05
             ? Math.abs(Math.sin(playerState.gaitPhase)) *
               (0.05 + playerState.run * 0.09) *
               Math.min(playerState.walk, 1)
@@ -669,6 +720,9 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         walk: playerState.walk,
         run: playerState.run,
         phase: playerState.gaitPhase,
+        air: playerState.air,
+        vy: playerState.vy,
+        jumps: playerState.jumps,
       });
 
       // --- world animation --------------------------------------------------

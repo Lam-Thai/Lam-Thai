@@ -839,6 +839,37 @@ export function createKnight({ tunic = COLORS.cloth, isPlayer = false, seed = 7 
         run * 0.5 +
         Math.sin(t * 3) * 0.04 +
         Math.abs(stride) * 0.06 * walk;
+
+      // Airborne: blend over the gait into a jump pose — lead leg forward,
+      // trail knee up, arms spread. A double jump pulls both knees into a
+      // tight mid-air tuck while rising.
+      const air = Math.min(s.air ?? 0, 1);
+      if (air > 0.01) {
+        const lerp = THREE.MathUtils.lerp;
+        const rising = THREE.MathUtils.clamp((s.vy ?? 0) / 8, -1, 1);
+        const tuck = (s.jumps ?? 0) >= 2 ? Math.max(rising, 0) : 0;
+        leftLeg.rotation.x = lerp(
+          leftLeg.rotation.x,
+          -0.5 - rising * 0.25 - tuck * 0.5,
+          air
+        );
+        rightLeg.rotation.x = lerp(rightLeg.rotation.x, 0.4 - tuck * 0.9, air);
+        leftKnee.rotation.x = lerp(leftKnee.rotation.x, 0.5 + tuck * 0.9, air);
+        rightKnee.rotation.x = lerp(rightKnee.rotation.x, 1.25 + tuck * 0.35, air);
+        leftArm.rotation.x = lerp(leftArm.rotation.x, -0.55, air);
+        rightArm.rotation.x = lerp(rightArm.rotation.x, -0.75, air);
+        leftElbow.rotation.x = lerp(leftElbow.rotation.x, -0.5, air);
+        rightElbow.rotation.x = lerp(rightElbow.rotation.x, -0.6, air);
+        leftArm.rotation.z = lerp(leftArm.rotation.z, -0.5, air); // spread wide
+        rightArm.rotation.z = lerp(rightArm.rotation.z, 0.5, air);
+        group.rotation.x = lerp(group.rotation.x, 0.18 - rising * 0.12, air);
+        capePivot.rotation.x = lerp(
+          capePivot.rotation.x,
+          0.85 - rising * 0.25,
+          air
+        );
+      }
+
       // idle breathing
       const breathe = 1 + Math.sin(t * 1.4) * 0.012 * (1 - walk);
       torso.scale.set(1, breathe, 1);

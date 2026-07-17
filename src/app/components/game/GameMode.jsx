@@ -107,11 +107,14 @@ export default function GameMode() {
               open a project&apos;s story
             </li>
             <li>
-              <span className="text-amber-300 font-medium">Windmill</span> —
-              Experience &amp; Education ·{" "}
-              <span className="text-amber-300 font-medium">Mountain</span> —
-              Contact me
+              <span className="text-amber-300 font-medium">Space</span> —
+              Jump
             </li>
+            <li>
+              <span className="text-amber-300 font-medium">Double Space</span> —
+              Double Jump
+            </li>
+            
           </ul>
         </div>
       )}
