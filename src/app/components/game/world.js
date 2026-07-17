@@ -1008,9 +1008,10 @@ export function createMonster(seed = 3) {
   const group = new THREE.Group();
   const rng = createRng((seed + 5) * 69069);
   const b = bumps();
+  const stature = 2.0; // towering brute — applied in update (which owns group.scale)
   const hue = 0.22 + rng() * 0.14; // mossy green → swamp olive
-  const skinColor = new THREE.Color().setHSL(hue, 0.42, 0.34).getHex();
-  const bodyMat = mat(skinColor, { roughness: 0.78, bumpMap: b.noise, bumpScale: 0.55 });
+  const skinColor = new THREE.Color().setHSL(hue, 0.5, 0.26).getHex();
+  const bodyMat = mat(skinColor, { roughness: 0.78, bumpMap: b.noise, bumpScale: 0.65 });
   const hideMat = mat(new THREE.Color(skinColor).multiplyScalar(0.8).getHex(), {
     roughness: 0.85,
     bumpMap: b.noise,
@@ -1022,45 +1023,98 @@ export function createMonster(seed = 3) {
   const body = organicSphere(0.95, bodyMat, { bump: 0.08, seed: seed + 3 });
   body.position.set(0, 1.05, -0.05);
   body.scale.set(1, 1.05, 0.92);
-  body.rotation.x = 0.22;
+  body.rotation.x = 0.3;
   const gut = mesh(new THREE.SphereGeometry(0.66, 18, 14), mat(0xb9c08a, { roughness: 0.85, bumpMap: b.noise, bumpScale: 0.4 }), 0, 0.78, 0.42);
   gut.scale.set(0.85, 0.8, 0.6);
 
-  // Head sits low between the shoulders: heavy jaw, underbite fangs.
+  // Head sits low between the shoulders: heavy jaw on its own pivot so it
+  // can roar open, a wall of underbite fangs, upper teeth, curled horns.
   const headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.78, 0.42);
+  headGroup.position.set(0, 1.74, 0.48);
   const skull = organicSphere(0.42, bodyMat, { bump: 0.06, seed: seed + 9 });
   skull.scale.set(1.05, 0.9, 0.95);
   headGroup.add(skull);
-  const jaw = mesh(new THREE.SphereGeometry(0.34, 16, 12), hideMat, 0, -0.22, 0.16);
+  const jawGroup = new THREE.Group();
+  jawGroup.position.set(0, -0.06, 0.06);
+  headGroup.add(jawGroup);
+  const jaw = mesh(new THREE.SphereGeometry(0.34, 16, 12), hideMat, 0, -0.16, 0.1);
   jaw.scale.set(1.05, 0.55, 1.05);
-  headGroup.add(jaw);
-  // underbite fangs point up
+  jawGroup.add(jaw);
+  // underbite fangs point up from the lower jaw
   for (const side of [-1, 1]) {
-    const fang = mesh(new THREE.ConeGeometry(0.05, 0.18, 6), boneMat, side * 0.18, -0.08, 0.4);
-    headGroup.add(fang);
+    jawGroup.add(mesh(new THREE.ConeGeometry(0.055, 0.28, 6), boneMat, side * 0.2, 0.02, 0.32));
+    jawGroup.add(mesh(new THREE.ConeGeometry(0.045, 0.18, 6), boneMat, side * 0.09, -0.02, 0.36));
   }
-  // small angry eyes under a heavy brow
-  const eyeMat = mat(0xe8c73c, { emissive: 0xa8781a, emissiveIntensity: 0.6, roughness: 0.3 });
+  // upper teeth hanging from the skull
   for (const side of [-1, 1]) {
-    headGroup.add(mesh(new THREE.SphereGeometry(0.06, 10, 8), eyeMat, side * 0.16, 0.08, 0.36));
-    const brow = mesh(new THREE.CapsuleGeometry(0.05, 0.2, 3, 8), hideMat, side * 0.17, 0.2, 0.34);
-    brow.rotation.z = Math.PI / 2 + side * 0.35;
+    for (let tth = 0; tth < 3; tth++) {
+      const tooth = mesh(
+        new THREE.ConeGeometry(0.03, 0.1 + (tth % 2) * 0.05, 5),
+        boneMat,
+        side * (0.08 + tth * 0.09),
+        -0.22,
+        0.36 - tth * 0.03
+      );
+      tooth.rotation.x = Math.PI;
+      headGroup.add(tooth);
+    }
+  }
+  // burning red eyes sunk under a heavier, angrier brow
+  const eyeMat = mat(0xff3820, { emissive: 0xc41808, emissiveIntensity: 1.7, roughness: 0.3 });
+  for (const side of [-1, 1]) {
+    headGroup.add(mesh(new THREE.SphereGeometry(0.065, 10, 8), eyeMat, side * 0.16, 0.07, 0.36));
+    const brow = mesh(new THREE.CapsuleGeometry(0.06, 0.22, 3, 8), hideMat, side * 0.17, 0.17, 0.36);
+    brow.rotation.z = Math.PI / 2 + side * 0.45;
     headGroup.add(brow);
     // torn ears
     const ear = mesh(new THREE.ConeGeometry(0.09, 0.3, 6), hideMat, side * 0.46, 0.12, -0.08);
     ear.rotation.z = -side * 1.35;
     headGroup.add(ear);
+    // stubby curled horns above the ears
+    let hx = side * 0.3;
+    let hy = 0.3;
+    let hz = -0.05;
+    let tilt = -0.5;
+    for (let s = 0; s < 2; s++) {
+      const segLen = 0.24 - s * 0.07;
+      const hornSeg = mesh(new THREE.ConeGeometry(0.07 - s * 0.02, segLen, 7), boneMat, hx, hy, hz);
+      hornSeg.rotation.x = tilt;
+      hornSeg.rotation.z = -side * 0.35;
+      headGroup.add(hornSeg);
+      hx += side * 0.05;
+      hy += Math.cos(tilt) * segLen * 0.65;
+      hz += Math.sin(tilt) * segLen * 0.65;
+      tilt -= 0.55;
+    }
   }
   // flat nose nostrils
   headGroup.add(mesh(new THREE.SphereGeometry(0.025, 6, 5), mat(0x1c140c), -0.05, -0.02, 0.44));
   headGroup.add(mesh(new THREE.SphereGeometry(0.025, 6, 5), mat(0x1c140c), 0.05, -0.02, 0.44));
 
-  // Back spikes down the hunched spine.
-  for (let i = 0; i < 4; i++) {
-    const spike = mesh(new THREE.ConeGeometry(0.09 - i * 0.012, 0.3 - i * 0.03, 6), boneMat, 0, 1.85 - i * 0.28, -0.5 - i * 0.12);
+  // Bone spikes down the hunched spine and bursting from the shoulders.
+  for (let i = 0; i < 6; i++) {
+    const spike = mesh(
+      new THREE.ConeGeometry(0.12 - i * 0.012, 0.42 - i * 0.04, 6),
+      boneMat,
+      0,
+      1.92 - i * 0.24,
+      -0.48 - i * 0.11
+    );
     spike.rotation.x = -0.5;
     group.add(spike);
+  }
+  for (const side of [-1, 1]) {
+    for (let s = 0; s < 2; s++) {
+      const shoulderSpike = mesh(
+        new THREE.ConeGeometry(0.07 - s * 0.02, 0.3 - s * 0.08, 6),
+        boneMat,
+        side * (0.6 + s * 0.14),
+        1.92 - s * 0.05,
+        -0.02 + s * 0.1
+      );
+      shoulderSpike.rotation.z = -side * (0.7 + s * 0.3);
+      group.add(shoulderSpike);
+    }
   }
   // stub tail
   const tail = mesh(new THREE.ConeGeometry(0.14, 0.45, 8), hideMat, 0, 0.55, -0.75);
@@ -1075,8 +1129,14 @@ export function createMonster(seed = 3) {
     const hand = mesh(new THREE.SphereGeometry(0.16, 12, 9), hideMat, 0, -0.9, 0.02);
     hand.scale.set(1, 0.8, 1.2);
     arm.add(hand);
-    for (let c = 0; c < 3; c++) {
-      const claw = mesh(new THREE.ConeGeometry(0.035, 0.13, 6), boneMat, (c - 1) * 0.08, -1.0, 0.14);
+    for (let c = 0; c < 4; c++) {
+      const claw = mesh(
+        new THREE.ConeGeometry(0.04, 0.22, 6),
+        boneMat,
+        (c - 1.5) * 0.075,
+        -1.03,
+        0.15
+      );
       claw.rotation.x = 2.6;
       arm.add(claw);
     }
@@ -1089,7 +1149,7 @@ export function createMonster(seed = 3) {
     foot.scale.set(1.1, 0.5, 1.6);
     leg.add(foot);
     for (let c = 0; c < 3; c++) {
-      const claw = mesh(new THREE.ConeGeometry(0.04, 0.12, 6), boneMat, (c - 1) * 0.09, -0.66, 0.36);
+      const claw = mesh(new THREE.ConeGeometry(0.045, 0.17, 6), boneMat, (c - 1) * 0.09, -0.66, 0.38);
       claw.rotation.x = 1.4;
       leg.add(claw);
     }
@@ -1100,21 +1160,28 @@ export function createMonster(seed = 3) {
 
   const phase = rng() * Math.PI * 2;
   const update = (t, delta, playerPos) => {
-    facePlayer(group, delta, playerPos, 10, 2.2);
+    facePlayer(group, delta, playerPos, 12, 2.2);
     // Heavy idle: breathing gut, shoulder roll, knuckle sway, an occasional
-    // intimidating stomp-hop instead of constant bouncing.
+    // intimidating stomp-hop, and a rare jaw-wide roar with the head thrown
+    // back.
     const breathe = 1 + Math.sin(t * 1.1 + phase) * 0.03;
     gut.scale.set(0.85 * breathe, 0.8, 0.6 * breathe);
     body.rotation.z = Math.sin(t * 0.9 + phase) * 0.04;
-    headGroup.rotation.y = Math.sin(t * 0.55 + phase) * 0.4;
-    headGroup.rotation.x = Math.sin(t * 1.3 + phase) * 0.06;
-    arms[0].rotation.x = Math.sin(t * 1.15 + phase) * 0.1;
-    arms[1].rotation.x = Math.sin(t * 1.15 + phase + Math.PI) * 0.1;
+    const roar = Math.max(0, Math.sin(t * 0.5 + phase + 2)) ** 8;
+    jawGroup.rotation.x = 0.06 + roar * 0.6;
+    headGroup.rotation.y = Math.sin(t * 0.55 + phase) * 0.4 * (1 - roar);
+    headGroup.rotation.x = Math.sin(t * 1.3 + phase) * 0.06 - roar * 0.3;
+    arms[0].rotation.x = Math.sin(t * 1.15 + phase) * 0.1 - roar * 0.5;
+    arms[1].rotation.x = Math.sin(t * 1.15 + phase + Math.PI) * 0.1 - roar * 0.5;
     const hopWave = Math.sin(t * 0.9 + phase);
     const hop = Math.max(0, hopWave) ** 6; // rare, punchy hop
-    group.position.y = group.userData.baseY + hop * 0.4;
+    group.position.y = group.userData.baseY + hop * 0.4 * stature;
     const squash = 1 - hop * 0.06 + (1 - Math.abs(hopWave)) * 0.015;
-    group.scale.set(2 - squash, squash, 2 - squash);
+    group.scale.set(
+      (2 - squash) * stature,
+      squash * stature,
+      (2 - squash) * stature
+    );
   };
 
   return { group, update };
@@ -1124,16 +1191,17 @@ export function createDragon(seed = 4) {
   const group = new THREE.Group();
   const rng = createRng((seed + 13) * 40503);
   const b = bumps();
-  const bodyMat = mat(COLORS.dragon, {
-    roughness: 0.55,
-    metalness: 0.12,
+  // Darker, blood-and-ash hide reads far more menacing at golden hour.
+  const bodyMat = mat(0x521812, {
+    roughness: 0.5,
+    metalness: 0.18,
     bumpMap: b.scales,
-    bumpScale: 0.65,
+    bumpScale: 0.75,
   });
-  const bellyMat = mat(0xcfa870, {
+  const bellyMat = mat(0x9c7f52, {
     roughness: 0.7,
     bumpMap: b.scales,
-    bumpScale: 0.4,
+    bumpScale: 0.45,
   });
   const boneMat = mat(0xd8ccae, { roughness: 0.5, bumpMap: b.noise, bumpScale: 0.3 });
 
@@ -1185,12 +1253,22 @@ export function createDragon(seed = 4) {
   for (const side of [-1, 1]) {
     head.add(mesh(new THREE.SphereGeometry(0.05, 8, 6), bodyMat, side * 0.1, 0.08, 1.05));
     head.add(mesh(new THREE.SphereGeometry(0.025, 6, 5), mat(0x140c08), side * 0.1, 0.09, 1.1));
-    // teeth row
-    for (let tth = 0; tth < 4; tth++) {
-      const tooth = mesh(new THREE.ConeGeometry(0.022, 0.09, 5), boneMat, side * (0.1 + tth * 0.035), -0.17, 0.55 + tth * 0.12);
+    // ragged double row of teeth, alternating long sabers and short cutters
+    for (let tth = 0; tth < 6; tth++) {
+      const tooth = mesh(
+        new THREE.ConeGeometry(0.026, tth % 2 === 0 ? 0.16 : 0.09, 5),
+        boneMat,
+        side * (0.09 + tth * 0.028),
+        -0.17,
+        0.42 + tth * 0.1
+      );
       tooth.rotation.x = Math.PI;
       head.add(tooth);
     }
+    // up-curving fangs from the lower jaw
+    const upFang = mesh(new THREE.ConeGeometry(0.035, 0.2, 5), boneMat, side * 0.16, -0.15, 0.78);
+    upFang.rotation.x = 0.25;
+    head.add(upFang);
     // brow ridge over the eye
     const ridge = mesh(new THREE.CapsuleGeometry(0.05, 0.2, 3, 8), bodyMat, side * 0.24, 0.22, 0.3);
     ridge.rotation.z = Math.PI / 2 + side * 0.3;
@@ -1209,32 +1287,42 @@ export function createDragon(seed = 4) {
     frill.position.set(side * 0.4, 0.02, -0.05);
     frill.rotation.y = side * 0.5;
     head.add(frill);
-    // swept-back segmented horns
+    // long swept-back segmented horns
     let hx = side * 0.2;
     let hy = 0.32;
     let hz = -0.2;
     let tilt = -0.7;
-    for (let s = 0; s < 3; s++) {
-      const segLen = 0.3 - s * 0.06;
-      const hornSeg = mesh(new THREE.ConeGeometry(0.08 - s * 0.02, segLen, 8), boneMat, hx, hy, hz);
+    for (let s = 0; s < 4; s++) {
+      const segLen = 0.34 - s * 0.05;
+      const hornSeg = mesh(new THREE.ConeGeometry(0.095 - s * 0.02, segLen, 8), boneMat, hx, hy, hz);
       hornSeg.rotation.x = tilt;
       head.add(hornSeg);
       hy += Math.cos(tilt) * segLen * 0.7;
       hz += Math.sin(tilt) * segLen * 0.7;
-      tilt -= 0.4;
+      tilt -= 0.38;
     }
   }
-  const eyeMat = mat(0xf5c23c, { emissive: 0xe89a2e, emissiveIntensity: 1.3, roughness: 0.3 });
-  head.add(mesh(new THREE.SphereGeometry(0.08, 12, 10), eyeMat, -0.22, 0.12, 0.42));
-  head.add(mesh(new THREE.SphereGeometry(0.08, 12, 10), eyeMat, 0.22, 0.12, 0.42));
+  // Furnace eyes: hot orange-red coals under the brow ridges.
+  const eyeMat = mat(0xff6a1e, { emissive: 0xff3a08, emissiveIntensity: 2.1, roughness: 0.25 });
+  head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), eyeMat, -0.22, 0.12, 0.42));
+  head.add(mesh(new THREE.SphereGeometry(0.09, 12, 10), eyeMat, 0.22, 0.12, 0.42));
   // slit pupils
   for (const side of [-1, 1]) {
-    const pupil = mesh(new THREE.BoxGeometry(0.015, 0.09, 0.02), mat(0x140c08), side * 0.22, 0.12, 0.49);
+    const pupil = mesh(new THREE.BoxGeometry(0.015, 0.1, 0.02), mat(0x140c08), side * 0.22, 0.12, 0.5);
     head.add(pupil);
   }
+  // Ember glow smouldering between the jaws, pulsing like a furnace.
+  const throatMat = mat(0xff7a1e, {
+    emissive: 0xff5a10,
+    emissiveIntensity: 1.8,
+    roughness: 0.4,
+  });
+  const throatGlow = mesh(new THREE.SphereGeometry(0.12, 10, 8), throatMat, 0, -0.13, 0.6);
+  throatGlow.scale.set(1.2, 0.45, 1.6);
+  head.add(throatGlow);
 
   // Smoke wisps drifting from the nostrils.
-  const smokeCount = 10;
+  const smokeCount = 14;
   const smokeGeo = new THREE.BufferGeometry();
   const smokePos = new Float32Array(smokeCount * 3);
   const smokeSeed = new Float32Array(smokeCount);
@@ -1261,22 +1349,22 @@ export function createDragon(seed = 4) {
     smokeGeo,
     new THREE.PointsMaterial({
       map: smokeTex,
-      size: 0.5,
+      size: 0.62,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.5,
       depthWrite: false,
     })
   );
   smoke.renderOrder = 3;
   head.add(smoke);
 
-  // Spine plates from neck to tail.
+  // Spine plates from neck to tail — taller, like a saw-backed ridge.
   for (let i = 0; i < 10; i++) {
     const spike = mesh(
-      new THREE.ConeGeometry(0.13 - i * 0.008, 0.4 - i * 0.02, 6),
+      new THREE.ConeGeometry(0.16 - i * 0.009, 0.58 - i * 0.03, 6),
       boneMat,
       0,
-      2.9 - i * 0.1 - (i > 5 ? (i - 5) * 0.12 : 0),
+      2.95 - i * 0.1 - (i > 5 ? (i - 5) * 0.12 : 0),
       1.3 - i * 0.55
     );
     spike.rotation.x = -0.3;
@@ -1325,6 +1413,7 @@ export function createDragon(seed = 4) {
     }
     wingGroup.rotation.x = -Math.PI / 2;
     wingGroup.rotation.z = mirror < 0 ? Math.PI : 0;
+    pivot.scale.setScalar(1.2); // broader wingspan
     pivot.add(wingGroup);
     return pivot;
   };
@@ -1378,17 +1467,20 @@ export function createDragon(seed = 4) {
   prev.add(fin);
 
   group.add(body, chest, head, leftWing, rightWing, tail);
+  group.scale.setScalar(2.1); // a true colossus beside the knight
 
   const phase = rng() * Math.PI * 2;
   const update = (t, delta) => {
-    // Grounded idle: breathing ribcage, tail lash, head survey; wings stay
-    // folded and stretch open every few seconds.
+    // Grounded idle: breathing ribcage, tail lash, head survey; wings rest
+    // half-raised for a spikier silhouette and stretch open every few
+    // seconds; the throat ember smoulders in and out.
     const breathe = 1 + Math.sin(t * 0.9 + phase) * 0.025;
     body.scale.set(1.0 * breathe, 0.9, 1.85);
+    throatMat.emissiveIntensity = 1.5 + Math.sin(t * 2.1 + phase) * 0.7;
     const stretch = Math.max(0, Math.sin(t * 0.45 + phase)) ** 3;
     const flutter = Math.sin(t * 6 + phase) * 0.05 * stretch;
-    leftWing.rotation.z = -0.55 + stretch * 0.75 + flutter;
-    rightWing.rotation.z = 0.55 - stretch * 0.75 - flutter;
+    leftWing.rotation.z = -0.72 + stretch * 0.95 + flutter;
+    rightWing.rotation.z = 0.72 - stretch * 0.95 - flutter;
     tail.rotation.y = Math.sin(t * 0.7 + phase) * 0.35;
     tail.rotation.x = Math.sin(t * 1.1 + phase) * 0.05;
     head.rotation.y = Math.sin(t * 0.4 + phase) * 0.5;

@@ -48,7 +48,7 @@ const RUN_SPEED = 15;
 const MOUNTAIN_KEEP_OUT = 38;
 const PLAYER_RADIUS = 0.45;
 // Body footprint per character type, for collision.
-const CHARACTER_RADII = { knight: 0.7, villager: 0.65, monster: 1.05, dragon: 2.3 };
+const CHARACTER_RADII = { knight: 0.7, villager: 0.65, monster: 2.15, dragon: 4.8 };
 
 /**
  * Imperative three.js scene wrapped in a React component.
@@ -164,6 +164,9 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     const colliders = createColliderSet();
 
     // ---------------------------------------------------- milestone characters
+    // Ground each character claims, so scenery scatter keeps clear of the
+    // big creatures' bodies (fed into keepOut below).
+    const npcClearings = [];
     MILESTONES.forEach((milestone, index) => {
       const build = CHARACTER_BUILDERS[milestone.character];
       if (!build) return;
@@ -185,7 +188,12 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       // Character stands beside the board (alternating sides), facing the
       // same way as the sign — like a herald presenting their quest.
       const side = index % 2 === 0 ? 1 : -1;
-      const gap = milestone.character === "dragon" ? 4.6 : 2.4;
+      const gap =
+        milestone.character === "dragon"
+          ? 8.6
+          : milestone.character === "monster"
+            ? 4.6
+            : 2.4;
       const nx = x + Math.sin(toCenter + (Math.PI / 2) * side) * gap;
       const nz = z + Math.cos(toCenter + (Math.PI / 2) * side) * gap;
       const npc = build(index + 1);
@@ -195,7 +203,9 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       npc.group.userData.homeYaw = toCenter;
       scene.add(npc.group);
       updaters.push(npc.update);
-      colliders.addCircle(nx, nz, CHARACTER_RADII[milestone.character] ?? 0.8);
+      const bodyRadius = CHARACTER_RADII[milestone.character] ?? 0.8;
+      colliders.addCircle(nx, nz, bodyRadius);
+      npcClearings.push({ x: nx, z: nz, r: bodyRadius + 2.5 });
     });
 
     // -------------------------------------------------------------- windmill
@@ -264,6 +274,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       { x: bridgeEndA.x, z: bridgeEndA.z, r: 3.2 },
       { x: bridgeEndB.x, z: bridgeEndB.z, r: 3.2 },
       ...MILESTONES.map((m) => ({ x: m.position[0], z: m.position[1], r: 7 })),
+      ...npcClearings,
       { x: wx, z: wz, r: 10 },
       { x: mx, z: mz, r: 46 },
       { x: PLAYER_SPAWN[0], z: PLAYER_SPAWN[1], r: 8 },
