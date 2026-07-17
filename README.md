@@ -29,6 +29,18 @@ Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 - Created advisor workflows, insurance visualizations, and PDF generation systems
 - Improved maintainability with refactoring and SonarCloud integration
 
+### Graphic Design Volunteer @ Hongik University
+Feb 2023 – Jun 2023
+- Designed promotional materials and event visuals for campus activities during the exchange program, using Adobe Illustrator and Photoshop to support student-led initiatives
+- Collaborated with local student designers on layout and branding work, gaining exposure to Korean design conventions and typography practices
+
+### Junior Graphic Designer @ FPT Software
+Apr 2022 – May 2023
+- Designed e-magazines and branded merch (apparel, tote bags, stickers) for FPT University events using Adobe InDesign, Illustrator, and Photoshop, elevating production quality across student campaigns
+- Created UI/UX designs and mockups for internal and promotional web/app interfaces using Figma and Adobe XD, improving usability and aligning visual design with brand standards
+- Produced banners, posters, and digital ads for university recruitment campaigns and corporate events, designed in Adobe Illustrator and Photoshop, boosting event and campaign visibility
+- Developed marketing collateral and event branding (signage, social media graphics, presentation decks) for company-wide events at FPT Software, supporting consistent brand presence at internal and public events
+
 ---
 
 ## Education 🎓
