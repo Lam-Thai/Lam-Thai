@@ -64,12 +64,12 @@ export function setupSky(renderer, scene) {
 // ---------------------------------------------------------------------------
 export function createWaterMaterial() {
   const material = new THREE.MeshStandardMaterial({
-    color: 0x1c4657,
-    roughness: 0.08,
+    color: 0x2a6274,
+    roughness: 0.12,
     metalness: 0,
     transparent: true,
-    opacity: 0.86,
-    envMapIntensity: 1.5,
+    opacity: 0.9,
+    envMapIntensity: 1.9,
   });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = { value: 0 };
@@ -98,9 +98,11 @@ export function createWaterMaterial() {
         "#include <normal_fragment_begin>",
         `#include <normal_fragment_begin>
         {
-          float w1 = sin(vWaterPos.x * 1.7 + uTime * 1.3) * cos(vWaterPos.z * 1.5 + uTime * 1.0);
-          float w2 = sin(vWaterPos.x * 3.9 - uTime * 2.2) * cos(vWaterPos.z * 3.3 + uTime * 1.6);
-          float w3 = sin((vWaterPos.x + vWaterPos.z) * 6.5 + uTime * 2.8);
+          // Wave phases march along -z -> +z so the current visibly runs
+          // downstream (the river flows south, toward positive z).
+          float w1 = sin(vWaterPos.x * 1.7 + uTime * 1.3) * cos(vWaterPos.z * 1.5 - uTime * 2.4);
+          float w2 = sin(vWaterPos.x * 3.9 - uTime * 2.2) * cos(vWaterPos.z * 3.3 - uTime * 3.1);
+          float w3 = sin((vWaterPos.x + vWaterPos.z) * 6.5 - uTime * 2.8);
           normal = normalize(normal + vec3(
             w1 * 0.22 + w2 * 0.10 + w3 * 0.04,
             0.0,
@@ -602,7 +604,7 @@ export function createVegetation(isClear, worldRadius, addObstacle) {
   const bushMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
   const bushes = new THREE.InstancedMesh(bushGeo, bushMat, BUSHES);
   bushes.castShadow = true;
-  bushes.count = scatter(BUSHES, 2.5, BUSHES * 12, (x, z, i) => {
+  bushes.count = scatter(BUSHES, 3.5, BUSHES * 12, (x, z, i) => {
     setInstance([bushes], i, x, z, 0.7 + rng() * 1.0, rng() * Math.PI * 2);
     tint.setHSL(0.22 + rng() * 0.12, 0.35 + rng() * 0.2, 0.26 + rng() * 0.1);
     bushes.setColorAt(i, tint);
@@ -618,7 +620,7 @@ export function createVegetation(isClear, worldRadius, addObstacle) {
   const shroomGeo = mergeGeometries([stemGeo, capGeo]);
   const shroomMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
   const shrooms = new THREE.InstancedMesh(shroomGeo, shroomMat, SHROOMS);
-  shrooms.count = scatter(SHROOMS, 3, SHROOMS * 12, (x, z, i) => {
+  shrooms.count = scatter(SHROOMS, 3.5, SHROOMS * 12, (x, z, i) => {
     setInstance([shrooms], i, x, z, 0.8 + rng() * 1.2, rng() * Math.PI * 2);
     tint.setHSL(rng() > 0.5 ? 0.02 : 0.08, 0.55 + rng() * 0.25, 0.4 + rng() * 0.15);
     shrooms.setColorAt(i, tint);
@@ -637,7 +639,7 @@ export function createVegetation(isClear, worldRadius, addObstacle) {
   timeMaterials.push(grassMat);
   const GRASS = 900;
   const grass = new THREE.InstancedMesh(grassGeo, grassMat, GRASS);
-  grass.count = scatter(GRASS, 1.2, GRASS * 8, (x, z, i) => {
+  grass.count = scatter(GRASS, 3.4, GRASS * 8, (x, z, i) => {
     setInstance([grass], i, x, z, 0.7 + rng() * 0.9, rng() * Math.PI);
   }, 1.6);
   group.add(grass);
@@ -653,7 +655,7 @@ export function createVegetation(isClear, worldRadius, addObstacle) {
   timeMaterials.push(flowerMat);
   const FLOWERS = 160;
   const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, FLOWERS);
-  flowers.count = scatter(FLOWERS, 2, FLOWERS * 10, (x, z, i) => {
+  flowers.count = scatter(FLOWERS, 3.4, FLOWERS * 10, (x, z, i) => {
     setInstance([flowers], i, x, z, 0.65 + rng() * 0.6, rng() * Math.PI);
   });
   group.add(flowers);

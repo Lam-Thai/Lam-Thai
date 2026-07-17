@@ -1673,6 +1673,98 @@ export function createHouse(rng) {
   return group;
 }
 
+// Arched plank bridge spanning the river. The deck runs along local x;
+// `tilt` raises the +x end so the ends can meet banks of slightly different
+// heights. Returns `deckYAt(lx)` — the walkable surface height in local
+// space — so gameplay can put the player on top of it.
+export function createBridge({ span = 11.4, width = 2.4, arch = 0.9, tilt = 0 } = {}) {
+  const group = new THREE.Group();
+  const half = span / 2;
+  const deckYAt = (lx) => {
+    const u = THREE.MathUtils.clamp(lx / half, -1, 1);
+    return arch * (1 - u * u) + tilt * u;
+  };
+  const slopeAt = (lx) =>
+    Math.atan2(deckYAt(lx + 0.01) - deckYAt(lx - 0.01), 0.02);
+
+  const plankTex = makePlankTexture(97, 1, 1);
+  const plankMat = new THREE.MeshStandardMaterial({
+    map: plankTex,
+    bumpMap: plankTex,
+    bumpScale: 0.35,
+    roughness: 0.9,
+  });
+  const beamMat = mat(COLORS.woodDark, {
+    roughness: 0.95,
+    bumpMap: bumps().noise,
+    bumpScale: 0.4,
+  });
+
+  // Deck: short plank segments following the arch.
+  const PLANKS = 15;
+  const step = span / PLANKS;
+  for (let i = 0; i < PLANKS; i++) {
+    const lx = -half + (i + 0.5) * step;
+    const plank = mesh(
+      new THREE.BoxGeometry(step * 1.06, 0.09, width),
+      plankMat,
+      lx,
+      deckYAt(lx) - 0.045,
+      0
+    );
+    plank.rotation.z = slopeAt(lx);
+    group.add(plank);
+  }
+
+  // Rails: posts with a top beam following the arch, both sides.
+  for (const side of [-1, 1]) {
+    const rz = (width / 2 - 0.08) * side;
+    let prev = null;
+    for (let i = 0; i <= 6; i++) {
+      const lx = -half + (i / 6) * span;
+      const py = deckYAt(lx);
+      group.add(
+        mesh(new THREE.BoxGeometry(0.12, 0.85, 0.12), beamMat, lx, py + 0.42, rz)
+      );
+      const top = new THREE.Vector3(lx, py + 0.88, rz);
+      if (prev) {
+        const beam = mesh(
+          new THREE.BoxGeometry(prev.distanceTo(top), 0.1, 0.1),
+          beamMat,
+          (prev.x + top.x) / 2,
+          (prev.y + top.y) / 2,
+          rz
+        );
+        beam.rotation.z = Math.atan2(top.y - prev.y, top.x - prev.x);
+        group.add(beam);
+      }
+      prev = top;
+    }
+  }
+
+  // Stone piers planted in the riverbed.
+  const stoneTex = makeStoneTexture(311, 2, 2);
+  const pierMat = new THREE.MeshStandardMaterial({
+    map: stoneTex,
+    bumpMap: stoneTex,
+    bumpScale: 0.55,
+    roughness: 0.95,
+  });
+  for (const lx of [-2.3, 2.3]) {
+    group.add(
+      mesh(
+        new THREE.CylinderGeometry(0.5, 0.66, 4.2, 10),
+        pierMat,
+        lx,
+        deckYAt(lx) - 2.2,
+        0
+      )
+    );
+  }
+
+  return { group, deckYAt };
+}
+
 // Village well: stone ring, A-frame posts, little roof, rope and bucket.
 export function createWell() {
   const group = new THREE.Group();

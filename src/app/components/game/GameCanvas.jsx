@@ -14,6 +14,7 @@ import {
 } from "@/lib/game-data";
 import {
   CHARACTER_BUILDERS,
+  createBridge,
   createCloud,
   createHouse,
   createKnight,
@@ -26,7 +27,6 @@ import {
 import {
   createRng,
   terrainHeight,
-  waterLevelAt,
   distanceToWater,
   buildTerrainMesh,
 } from "./terrain";
@@ -224,9 +224,45 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     });
     colliders.addCircle(mx, mz, MOUNTAIN_KEEP_OUT);
 
+    // ---------------------------------------------------------------- bridge
+    // Wooden arch bridge over the river ford toward the western knight
+    // (replaces the old stepping stones). The deck runs along local x,
+    // perpendicular to the river's flow at the crossing.
+    const bridgeSpanDir = new THREE.Vector2(22, -5).normalize();
+    const BRIDGE_POS = { x: -30.3, z: -16 };
+    const BRIDGE_HALF_SPAN = 5.7;
+    const BRIDGE_HALF_WIDTH = 1.2;
+    const bridgeYaw = Math.atan2(-bridgeSpanDir.y, bridgeSpanDir.x);
+    const bridgeCos = Math.cos(bridgeYaw);
+    const bridgeSin = Math.sin(bridgeYaw);
+    const bridgeEndA = {
+      x: BRIDGE_POS.x + bridgeSpanDir.x * BRIDGE_HALF_SPAN,
+      z: BRIDGE_POS.z + bridgeSpanDir.y * BRIDGE_HALF_SPAN,
+    };
+    const bridgeEndB = {
+      x: BRIDGE_POS.x - bridgeSpanDir.x * BRIDGE_HALF_SPAN,
+      z: BRIDGE_POS.z - bridgeSpanDir.y * BRIDGE_HALF_SPAN,
+    };
+    const bridgeEndAY = terrainHeight(bridgeEndA.x, bridgeEndA.z);
+    const bridgeEndBY = terrainHeight(bridgeEndB.x, bridgeEndB.z);
+    const bridgeBaseY = (bridgeEndAY + bridgeEndBY) / 2;
+    const bridge = createBridge({
+      span: BRIDGE_HALF_SPAN * 2,
+      width: BRIDGE_HALF_WIDTH * 2,
+      arch: 0.9,
+      tilt: (bridgeEndAY - bridgeEndBY) / 2,
+    });
+    bridge.group.position.set(BRIDGE_POS.x, bridgeBaseY, BRIDGE_POS.z);
+    bridge.group.rotation.y = bridgeYaw;
+    scene.add(bridge.group);
+    const bridgeDeckWorldY = (lx) => bridgeBaseY + bridge.deckYAt(lx);
+
     // --------------------------------------------------------------- scenery
     const rng = createRng(20260703);
     const keepOut = [
+      // bridge approaches
+      { x: bridgeEndA.x, z: bridgeEndA.z, r: 2.6 },
+      { x: bridgeEndB.x, z: bridgeEndB.z, r: 2.6 },
       ...MILESTONES.map((m) => ({ x: m.position[0], z: m.position[1], r: 7 })),
       { x: wx, z: wz, r: 10 },
       { x: mx, z: mz, r: 46 },
@@ -282,17 +318,6 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       );
     }
 
-    // Stepping stones across the ford toward the western knight.
-    for (let i = 0; i < 5; i++) {
-      const x = -34.5 + i * 2.1;
-      const z = -16;
-      const stone = createRock(rng);
-      stone.scale.setScalar(1.15 + rng() * 0.25);
-      stone.scale.y *= 0.6;
-      stone.position.set(x, waterLevelAt(x, z) + 0.15, z);
-      stone.rotation.y = rng() * Math.PI;
-      scene.add(stone);
-    }
     // A little hamlet near the spawn to sell the medieval vibe.
     for (const [hx, hz] of [
       [-8, 16],
@@ -340,6 +365,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
       z: PLAYER_SPAWN[1],
       yaw: Math.PI, // face the world (negative z)
       walk: 0,
+      groundY: terrainHeight(PLAYER_SPAWN[0], PLAYER_SPAWN[1]),
     };
 
     // ---------------------------------------------------------------- camera
@@ -349,7 +375,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
     const cameraTarget = new THREE.Vector3();
 
     const updateCamera = (delta) => {
-      const py = terrainHeight(playerState.x, playerState.z);
+      const py = playerState.groundY;
       const { yaw, pitch, dist } = cameraState;
       const horiz = Math.cos(pitch) * dist;
       cameraPos.set(
@@ -527,9 +553,42 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
         // Push out of solid props (characters, buildings, trees, the
         // mountain…) so the player slides along them instead of clipping.
         const resolved = colliders.resolve(nx, nz, PLAYER_RADIUS);
+        nx = resolved.x;
+        nz = resolved.z;
 
-        playerState.x = resolved.x;
-        playerState.z = resolved.z;
+        // Bridge deck: cross over the river when approaching at deck level;
+        // the riverbed below stays passable. Whichever surface is closer to
+        // the player's current ground height wins, so walking under the
+        // bridge never teleports them on top of it.
+        let groundY = terrainHeight(nx, nz);
+        const bdx = nx - BRIDGE_POS.x;
+        const bdz = nz - BRIDGE_POS.z;
+        const blx = bdx * bridgeCos - bdz * bridgeSin;
+        let blz = bdx * bridgeSin + bdz * bridgeCos;
+        if (
+          Math.abs(blx) < BRIDGE_HALF_SPAN &&
+          Math.abs(blz) < BRIDGE_HALF_WIDTH + 0.3
+        ) {
+          const deckY = bridgeDeckWorldY(blx);
+          if (
+            Math.abs(deckY - playerState.groundY) <=
+            Math.abs(groundY - playerState.groundY)
+          ) {
+            groundY = deckY;
+            // Rails: keep the player from stepping off the side.
+            const railLimit = BRIDGE_HALF_WIDTH - 0.35;
+            const clamped = THREE.MathUtils.clamp(blz, -railLimit, railLimit);
+            if (clamped !== blz) {
+              blz = clamped;
+              nx = BRIDGE_POS.x + blx * bridgeCos + blz * bridgeSin;
+              nz = BRIDGE_POS.z - blx * bridgeSin + blz * bridgeCos;
+            }
+          }
+        }
+
+        playerState.x = nx;
+        playerState.z = nz;
+        playerState.groundY = groundY;
         const targetYaw = Math.atan2(moveDir.x, moveDir.z);
         let dyaw = targetYaw - playerState.yaw;
         while (dyaw > Math.PI) dyaw -= Math.PI * 2;
@@ -542,7 +601,7 @@ export default function GameCanvas({ onInteract, inputRef, pausedRef }) {
 
       player.group.position.set(
         playerState.x,
-        terrainHeight(playerState.x, playerState.z) +
+        playerState.groundY +
           (playerState.walk > 0.05 ? Math.abs(Math.sin(t * 9)) * 0.12 : 0),
         playerState.z
       );

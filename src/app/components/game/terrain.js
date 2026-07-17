@@ -50,6 +50,7 @@ export function fbm(x, z, octaves = 4) {
 // Polyline from the waterfall plunge pool (by the mountain) down through the
 // west side of the realm. [x, z] pairs, ordered downstream.
 export const RIVER_PATH = [
+  [-28, -103], // inside the plunge pool so the water joins seamlessly
   [-28, -96],
   [-27, -72],
   [-30, -48],
@@ -63,8 +64,8 @@ export const RIVER_PATH = [
 export const PLUNGE_POOL = { x: -28, z: -101, r: 7.5 };
 
 export const RIVER_CARVE_HALF_WIDTH = 4.6; // where the banks start
-export const RIVER_WATER_HALF_WIDTH = 3.1; // water surface half width
-export const RIVER_WATER_DROP = 0.9; // water surface below bank base height
+export const RIVER_WATER_HALF_WIDTH = 3.6; // water surface half width
+export const RIVER_WATER_DROP = 0.6; // water surface below bank base height
 
 function smooth01(t) {
   const c = Math.min(Math.max(t, 0), 1);
