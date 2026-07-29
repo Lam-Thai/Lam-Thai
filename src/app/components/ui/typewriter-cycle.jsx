@@ -1,22 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-const subscribeToReducedMotion = (onChange) => {
-  const query = window.matchMedia(REDUCED_MOTION_QUERY);
-  query.addEventListener("change", onChange);
-
-  return () => query.removeEventListener("change", onChange);
-};
-
-const getReducedMotion = () => window.matchMedia(REDUCED_MOTION_QUERY).matches;
-
-// The server can't know the user's preference, so render as if motion is allowed.
-const getReducedMotionOnServer = () => false;
+import { REDUCED_MOTION_QUERY, useMediaQuery } from "@/lib/use-media-query";
 
 /**
  * Types a word out one character at a time, holds it, backspaces it, then moves
@@ -40,11 +27,7 @@ export const TypewriterCycle = ({
   const [wordIndex, setWordIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const hasStartedRef = useRef(false);
-  const reducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    getReducedMotion,
-    getReducedMotionOnServer
-  );
+  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
 
   const wordCount = words.length;
   const word = wordCount > 0 ? words[wordIndex % wordCount] : "";

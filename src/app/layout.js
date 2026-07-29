@@ -1,5 +1,6 @@
 import { Anek_Latin } from "next/font/google";
 import "./globals.css";
+import GlitchCursor from "./components/GlitchCursor";
 
 const anekLatin = Anek_Latin({
   variable: "--font-anek-latin",
@@ -19,7 +20,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${anekLatin.variable} antialiased`}>{children}</body>
+      <body className={`${anekLatin.variable} antialiased`}>
+        {children}
+        <GlitchCursor />
+      </body>
     </html>
   );
 }

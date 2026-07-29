@@ -24,6 +24,17 @@ body {
   font-family: var(--font-anek-latin), Arial, Helvetica, sans-serif;
 }
 
+/*
+ * Hands the pointer over to <GlitchCursor />, which adds this class only when a
+ * fine pointer is present. `!important` is needed to beat cursors set inline by
+ * JS; elements that draw a meaningful cursor of their own keep theirs.
+ */
+html.glitch-cursor-active,
+html.glitch-cursor-active
+  *:not(input):not(textarea):not(select):not(canvas):not([contenteditable="true"]) {
+  cursor: none !important;
+}
+
 /* Custom animations */
 @keyframes float {
   0%,
