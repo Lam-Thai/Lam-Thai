@@ -4,6 +4,7 @@ import { CardContainer, CardBody, CardItem } from "./components/ui/3d-card";
 import Link from "next/link";
 import AnimatedStatValue from "./components/AnimatedStatValue";
 import { TextGenerateEffect } from "./components/ui/text-generate-effect";
+import { TypewriterCycle } from "./components/ui/typewriter-cycle";
 
 export default function Home() {
   return (
@@ -37,19 +38,11 @@ export default function Home() {
                 textClassName="text-white"
                 wordClassName="text-white"
               />
-              <TextGenerateEffect
-                words="Developer"
-                duration={0.45}
-                className="text-left text-5xl md:text-7xl font-bold leading-tight"
+              <TypewriterCycle
+                words={["Developer", "Designer"]}
+                className="mt-4 text-left text-5xl md:text-7xl font-bold leading-tight"
                 textClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
-                wordClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
-              />
-              <TextGenerateEffect
-                words="Designer"
-                duration={0.45}
-                className="text-left text-5xl md:text-7xl font-bold leading-tight"
-                textClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
-                wordClassName="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent"
+                cursorClassName="bg-amber-400"
               />
             </div>
 
