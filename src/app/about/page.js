@@ -37,6 +37,8 @@ export default function About() {
       name: "FPT Software - Web Developer Intern",
       designation: "Jan 2025 - Sep 2025 | Remote",
       src: "/fpt-software.png",
+      summary:
+        "Built and maintained internal enterprise web tools at FPT Software, working across ASP.NET, C#, and AngularJS while setting up an automated E2E testing pipeline to cut defects and speed up delivery.",
       bullets: [
         "Developed and maintained internal enterprise web applications with ASP.NET + C#, serving 150+ internal users and cutting manual reporting time by ~40%.",
         "Built dynamic front-end interfaces with AngularJS, HTML5, and CSS, improving page load speed by ~25% and reducing UI defects by ~30%.",
@@ -48,6 +50,8 @@ export default function About() {
       name: "Vero Ventures - Full Stack Developer Intern",
       designation: "Jan 2026 - Aug 2026 | California, USA",
       src: "/vero-ventures.png",
+      summary:
+        "Co-building a multi-tenant InsurTech SaaS platform at Vero Ventures, shipping AI-driven advisory tools, financial planning features, and secure backend infrastructure with Next.js, Gemini, and PostgreSQL.",
       bullets: [
         "Co-built a multi-tenant InsurTech SaaS platform with Next.js 14 + TypeScript, scaling to 500+ users and cutting delivery time by ~37% through modular architecture and Vercel CI/CD + Docker.",
         "Implemented AI-driven features using the Google Gemini API — chat-based advisory, insurance needs calculations, life expectancy estimation — cutting manual planning effort by ~46% for 500+ users.",

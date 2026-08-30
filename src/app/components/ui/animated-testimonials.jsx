@@ -1,15 +1,24 @@
 "use client";
-import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconChevronDown,
+} from "@tabler/icons-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useEffect, useState } from "react";
 
 export const AnimatedTestimonials = ({ testimonials, autoplay = false }) => {
   const [active, setActive] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   const [rotationValues] = useState(() => {
     return testimonials.map(() => Math.floor(Math.random() * 21) - 10);
   });
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [active]);
 
   const handleNext = () => {
     setActive((prev) => (prev + 1) % testimonials.length);
@@ -107,24 +116,60 @@ export const AnimatedTestimonials = ({ testimonials, autoplay = false }) => {
               {testimonials[active].designation}
             </p>
             {testimonials[active].bullets ? (
-              <ul className="mt-8 space-y-3">
-                {testimonials[active].bullets.map((bullet, index) => (
-                  <motion.li
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.3,
-                      ease: "easeInOut",
-                      delay: 0.08 * index,
-                    }}
-                    className="flex gap-3 text-base text-zinc-300 leading-relaxed"
-                  >
-                    <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-orange-400" />
-                    <span>{bullet}</span>
-                  </motion.li>
-                ))}
-              </ul>
+              <>
+                <AnimatePresence mode="wait">
+                  {expanded ? (
+                    <motion.ul
+                      key="bullets"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="mt-8 space-y-3"
+                    >
+                      {testimonials[active].bullets.map((bullet, index) => (
+                        <motion.li
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.3,
+                            ease: "easeInOut",
+                            delay: 0.08 * index,
+                          }}
+                          className="flex gap-3 text-base text-zinc-300 leading-relaxed"
+                        >
+                          <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-orange-400" />
+                          <span>{bullet}</span>
+                        </motion.li>
+                      ))}
+                    </motion.ul>
+                  ) : (
+                    <motion.p
+                      key="summary"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="mt-8 text-lg text-zinc-300"
+                    >
+                      {testimonials[active].summary}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  className="mt-4 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-colors hover:text-orange-300"
+                >
+                  {expanded ? "Show less" : "Read more"}
+                  <IconChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      expanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+              </>
             ) : (
               <motion.p className="mt-8 text-lg text-zinc-300">
                 {testimonials[active].quote.split(" ").map((word, index) => (
