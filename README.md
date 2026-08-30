@@ -29,6 +29,13 @@ Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 - Created advisor workflows, insurance visualizations, and PDF generation systems
 - Improved maintainability with refactoring and SonarCloud integration
 
+### Web Developer Intern @ FPT Software
+Jan 2025 – Sep 2025 | Remote
+- Developed and maintained internal enterprise web applications with ASP.NET + C#, serving 150+ internal users and cutting manual reporting time by ~40%
+- Built dynamic front-end interfaces with AngularJS, HTML5, and CSS, improving page load speed by ~25% and reducing UI defects by ~30%
+- Established a testing pipeline with Playwright E2E tests and Vitest unit tests gated by pre-push Husky hooks, alongside CodeQL static analysis, cutting escaped defects by ~35%
+- Practiced agentic engineering with Claude Code, structuring version-controlled sub-agents and skills files governed by an AGENTS.md rule file, cutting repetitive dev tasks by ~30%
+
 ### Graphic Design Volunteer @ Hongik University
 Feb 2023 – Jun 2023
 - Designed promotional materials and event visuals for campus activities during the exchange program, using Adobe Illustrator and Photoshop to support student-led initiatives
