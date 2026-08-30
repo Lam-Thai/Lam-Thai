@@ -24,10 +24,11 @@ Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 ## Experience 🧠
 
 ### Full-stack Developer Intern @ Vero Ventures
-- Built multi-tenant InsurTech SaaS features using Next.js 14 and TypeScript
-- Developed AI-powered financial planning and advisory tools
-- Created advisor workflows, insurance visualizations, and PDF generation systems
-- Improved maintainability with refactoring and SonarCloud integration
+Jan 2026 – Aug 2026 | California, USA
+- Co-built a multi-tenant InsurTech SaaS platform using Next.js 14 + TypeScript, scaling to 500+ users and cutting delivery time by ~37% via modular architecture and Vercel CI/CD + Docker
+- Implemented AI-driven features using Google Gemini API — chat-based advisory, insurance needs calculations, life expectancy estimation — cutting manual planning effort by ~46% for 500+ users
+- Developed financial planning tools and advisor workflows, including life event simulations, insurance breakdown UIs (React + Recharts), PDF generation, and estate flow diagrams, cutting documentation time by ~32%
+- Built secure backend and auth with PostgreSQL (Neon), Drizzle ORM, Clerk, Stripe; refactoring plus SonarCloud and CodeRabbit reviews cut production bugs by ~28%
 
 ### Web Developer Intern @ FPT Software
 Jan 2025 – Sep 2025 | Remote
