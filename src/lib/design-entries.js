@@ -19,7 +19,7 @@ export const designEntries = {
     id: "fpt",
     title: "FPT University",
     subtitle: "Graphic Design Bachelor",
-    date: "Oct 2021 — Dec 2023",
+    date: "Oct 2021 - Dec 2023",
     description:
       "Coursework and projects spanning branding, editorial layouts, 3D asset creation, photography, and a curated portfolio of visual design work.",
     details: ["Illustrations", "3D", "Photograph", "Portfolio"],
@@ -67,7 +67,7 @@ export const designEntries = {
     id: "hongik",
     title: "Hongik University",
     subtitle: "Exchange program",
-    date: "Feb 2023 — Jun 2023",
+    date: "Feb 2023 - Jun 2023",
     description:
       "Exchange semester focused on typography, web research, and magazine design, exploring layout systems, type-setting, and print workflows.",
     details: ["Typography", "Magazine", "Web Research", "Video Editing"],

@@ -59,7 +59,7 @@ export default async function DesignEntry({ params }) {
         <header className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-3">{entry.title}</h1>
           <div className="text-zinc-400">
-            {entry.subtitle} —{" "}
+            {entry.subtitle} |{" "}
             <span className="text-zinc-300">{entry.date}</span>
           </div>
           <p className="mt-4 text-zinc-300 max-w-3xl">{entry.description}</p>

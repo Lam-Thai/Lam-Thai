@@ -54,7 +54,7 @@ export default function About() {
         "Co-building a multi-tenant InsurTech SaaS platform at Vero Ventures, shipping AI-driven advisory tools, financial planning features, and secure backend infrastructure with Next.js, Gemini, and PostgreSQL.",
       bullets: [
         "Co-built a multi-tenant InsurTech SaaS platform with Next.js 14 + TypeScript, scaling to 500+ users and cutting delivery time by ~37% through modular architecture and Vercel CI/CD + Docker.",
-        "Implemented AI-driven features using the Google Gemini API — chat-based advisory, insurance needs calculations, life expectancy estimation — cutting manual planning effort by ~46% for 500+ users.",
+        "Implemented AI-driven features using the Google Gemini API for chat-based advisory, insurance needs calculations, and life expectancy estimation, cutting manual planning effort by ~46% for 500+ users.",
         "Developed financial planning tools and advisor workflows, including life event simulations, insurance breakdown UIs (React + Recharts), PDF generation, and estate flow diagrams, cutting documentation time by ~32%.",
         "Built secure backend and auth with PostgreSQL (Neon), Drizzle ORM, Clerk, and Stripe; refactoring plus SonarCloud and CodeRabbit reviews cut production bugs by ~28%.",
       ],

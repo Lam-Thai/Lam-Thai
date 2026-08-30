@@ -74,7 +74,7 @@ export default function GameMode() {
           ⚔️ The Realm of Lam Thai
         </p>
         <p className="text-zinc-300 text-xs md:text-sm">
-          {MILESTONES.length} quests await — seek the characters and read their
+          {MILESTONES.length} quests await. Seek the characters and read their
           signs
         </p>
       </div>
@@ -97,23 +97,23 @@ export default function GameMode() {
           <ul className="space-y-1.5">
             <li>
               <span className="text-amber-300 font-medium">WASD / Arrows</span>{" "}
-              — move your knight (Shift to run)
+              : move your knight (Shift to run)
             </li>
             <li>
-              <span className="text-amber-300 font-medium">Drag</span> — look
+              <span className="text-amber-300 font-medium">Drag</span> : look
               around · <span className="text-amber-300 font-medium">Scroll</span>{" "}
-              — zoom
+              : zoom
             </li>
             <li>
-              <span className="text-amber-300 font-medium">Click signs</span> —
+              <span className="text-amber-300 font-medium">Click signs</span> :
               open a project&apos;s story
             </li>
             <li>
-              <span className="text-amber-300 font-medium">Space</span> —
+              <span className="text-amber-300 font-medium">Space</span> :
               Jump
             </li>
             <li>
-              <span className="text-amber-300 font-medium">Double Space</span> —
+              <span className="text-amber-300 font-medium">Double Space</span> :
               Double Jump
             </li>
             
