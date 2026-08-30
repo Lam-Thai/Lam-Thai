@@ -34,11 +34,26 @@ export default function About() {
         "Participated in an exchange program focusing on visual design and contemporary art. Engaged in collaborative projects that enhanced cross-cultural communication and design thinking skills.",
     },
     {
+      name: "FPT Software - Web Developer Intern",
+      designation: "Jan 2025 - Sep 2025 | Remote",
+      src: "/fpt-software.png",
+      bullets: [
+        "Developed and maintained internal enterprise web applications with ASP.NET + C#, serving 150+ internal users and cutting manual reporting time by ~40%.",
+        "Built dynamic front-end interfaces with AngularJS, HTML5, and CSS, improving page load speed by ~25% and reducing UI defects by ~30%.",
+        "Established a testing pipeline with Playwright E2E tests and Vitest unit tests gated by pre-push Husky hooks, alongside CodeQL static analysis, cutting escaped defects by ~35%.",
+        "Practiced agentic engineering with Claude Code, structuring version-controlled sub-agents and skills files governed by an AGENTS.md rule file, cutting repetitive dev tasks by ~30%.",
+      ],
+    },
+    {
       name: "Vero Ventures - Full Stack Developer Intern",
-      designation: "Jan 2026 - Apr 2026 | California, USA",
+      designation: "Jan 2026 - Aug 2026 | California, USA",
       src: "/vero-ventures.png",
-      quote:
-        "Contributed to the development of web applications using React and Bun.js. Assisted in database design and API integration, while collaborating with a team of developers to deliver high-quality software solutions.",
+      bullets: [
+        "Co-built a multi-tenant InsurTech SaaS platform with Next.js 14 + TypeScript, scaling to 500+ users and cutting delivery time by ~37% through modular architecture and Vercel CI/CD + Docker.",
+        "Implemented AI-driven features using the Google Gemini API — chat-based advisory, insurance needs calculations, life expectancy estimation — cutting manual planning effort by ~46% for 500+ users.",
+        "Developed financial planning tools and advisor workflows, including life event simulations, insurance breakdown UIs (React + Recharts), PDF generation, and estate flow diagrams, cutting documentation time by ~32%.",
+        "Built secure backend and auth with PostgreSQL (Neon), Drizzle ORM, Clerk, and Stripe; refactoring plus SonarCloud and CodeRabbit reviews cut production bugs by ~28%.",
+      ],
     },
   ];
 
