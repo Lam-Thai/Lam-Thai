@@ -10,46 +10,6 @@ export default function ProjectDetail() {
   const params = useParams();
   const projectId = params.id;
 
-  const landlyProject = {
-    title: "Landly",
-    description:
-      "A modern SaaS landing experience built with Next.js App Router, polished motion, premium UI sections, and auth-ready routes for growth into a full product.",
-    fullDescription:
-      "Landly is a polished SaaS landing experience focused on clarity, conversion, and technical depth. It pairs a cinematic hero, high-signal feature sections, and motion-driven UI with auth-ready routes, AI and PDF endpoints, Prisma-backed PostgreSQL, Stripe billing, and webhook-driven user sync so the design can grow into a production product without rework.",
-    image: "/ats_scan.avif",
-    technologies: [
-      "Next.js 15",
-      "React 19",
-      "Tailwind CSS 4",
-      "Framer Motion",
-      "Clerk",
-      "Prisma 7",
-      "PostgreSQL",
-      "@prisma/adapter-pg",
-      "@google/generative-ai",
-      "@react-pdf/renderer",
-      "Svix",
-      "Stripe",
-      "Playwright",
-      "Husky",
-    ],
-    githubUrl: "https://github.com/Lam-Thai/Landly",
-    liveUrl: "https://landly-rho.vercel.app/",
-    features: [
-      "Premium hero and feature sections with polished motion",
-      "Clerk-auth-ready public and protected routes",
-      "Gemini completions with primary and backup API key fallback",
-      "Authenticated PDF generation via a dedicated API route",
-      "Stripe checkout plus webhook-driven subscription sync",
-      "Clerk webhook user synchronization through Svix",
-      "Playwright E2E coverage with Husky pre-push gating",
-    ],
-    challenges:
-      "Combining a conversion-focused marketing surface with production-ready integrations without making the landing page feel like a dashboard.",
-    solution:
-      "Separated the experience into reusable UI sections, protected route boundaries, and focused API endpoints so the marketing layer stays polished while the app can expand into a full SaaS product.",
-  };
-
   // Project data (same as in work page)
   const projects = {
     tandem: {
@@ -301,8 +261,58 @@ export default function ProjectDetail() {
         "Database query p99 latency: <100ms for booking lookups",
       ],
     },
-    landly: landlyProject,
-    "expense-tracker": landlyProject,
+    tether: {
+      title: "Tether",
+      description:
+        "An AI receptionist for small businesses that answers calls and website chat, answers customer questions, books real appointments into the owner's Google Calendar, and hands anything tricky to a human.",
+      fullDescription:
+        "Tether is a friendly front-desk receptionist that never sleeps. Built for appointment-based businesses like salons, barbershops, spas, and trades, each business gets its own phone number and AI receptionist. Twilio carries the call, Gemini works out what the caller wants, and a FastAPI backend validates every suggested action against the business's rules before checking Google Calendar for a real free slot. Every conversation is saved with a full transcript and a two-sentence summary, and anything the AI can't or shouldn't handle is escalated to the owner by SMS. Owners manage everything from a Next.js dashboard: onboarding, an Agent Builder for greeting, tone, services, hours, and FAQs, phone activation, one-click calendar connection, an inbox, usage, and Stripe billing.",
+      image: "/tether-logo.png",
+      technologies: [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "shadcn/ui",
+        "React Hook Form",
+        "Zod",
+        "Clerk",
+        "FastAPI",
+        "Python",
+        "PostgreSQL",
+        "Alembic",
+        "Gemini",
+        "Twilio",
+        "Google Calendar API",
+        "Stripe",
+        "Neon",
+        "Vercel",
+        "Docker",
+        "Vitest",
+        "pytest",
+        "Playwright",
+        "Husky",
+        "GitHub Actions",
+        "Claude Code",
+      ],
+      githubUrl: "https://github.com/Lam-Thai/Tether",
+      liveUrl: "https://tether-web-tau.vercel.app/",
+      features: [
+        "AI phone and website-chat receptionist with a natural voice and owner-chosen personality",
+        "Real bookings: checks Google Calendar for free slots and confirms only after the calendar does",
+        "Escalates complaints, emergencies, and uncertain requests to the owner by SMS",
+        "Full transcript plus a two-sentence summary of every conversation",
+        "Owner dashboard: onboarding, Agent Builder with test chat, phone, calendar, inbox, usage, and settings",
+        "Strict tenant isolation so each business only ever sees its own data",
+        "Per-tenant usage caps on every AI, phone, and calendar request with polite fallbacks",
+        "Layered FastAPI backend (api, services, repositories, models, integrations, core) with fakes for every provider",
+        "AI eval harness grading real Gemini on answering, booking, and escalation",
+        "CI with Playwright E2E, reversible migrations, secret scanning, and dependency audits, plus a Husky pre-push gate",
+      ],
+      challenges:
+        "Letting an LLM talk to real customers and take real actions (bookings, texts) without it ever inventing a confirmation, leaking one business's data to another, or running up provider costs on free tiers.",
+      solution:
+        "Gemini can only suggest tool calls; the FastAPI backend validates each one against the business's services, hours, and booking rules, and reports success only after Google Calendar or Twilio confirms. Repositories are scoped to the signed-in business, every outbound provider call is metered against a usage cap with retries bounded, and webhooks are signature-verified and idempotent so duplicates never double-book.",
+    },
     insurflow: {
       title: "InsurFlow - Vero Ventures",
       description:
@@ -440,44 +450,45 @@ export default function ProjectDetail() {
       solution:
         "Used Socket.io to synchronize turns and game state across players, ensuring consistent and responsive gameplay.",
     },
-    subsave: {
-      title: "SubSave",
+    landly: {
+      title: "Landly",
       description:
-        "A modern subscription finance app that helps users track recurring costs, avoid hidden charges, and make smarter keep-or-cancel decisions.",
+        "An AI-powered web app that tailors resumes to match job descriptions, with rewritten bullets, a generated cover letter, and PDF export.",
       fullDescription:
-        "SubSave combines a clean dashboard, practical value insights, and an in-app AI assistant so subscription management feels simple and actionable. Users can manage subscriptions, monitor upcoming billing risk, detect trial traps before paid renewal, and optimize duplicate services across shared circles. The platform is production-ready with request tracing, route-level rate limiting, and a live health monitoring card backed by a runtime health endpoint.",
-      image: "/subsave.jpg",
+        "Landly is an AI-powered web app that tailors resumes to match job descriptions. Users paste their resume and a job post, and the app rewrites bullets, generates a cover letter, and exports everything to PDF. Built with Next.js, TypeScript, Prisma, and PostgreSQL. Freemium with a Pro plan for unlimited use.",
+      image: "/ats_scan.avif",
       technologies: [
-        "Next.js 14 (App Router)",
-        "React 18",
-        "TypeScript 5",
-        "Tailwind CSS",
-        "Recharts",
-        "Lucide React",
-        "shadcn/ui",
-        "Radix UI",
-        "Zod",
+        "Next.js 15",
+        "React 19",
+        "TypeScript",
+        "Tailwind CSS 4",
+        "Framer Motion",
         "Clerk",
-        "Prisma ORM",
+        "Prisma 7",
         "PostgreSQL",
-        "Gemini API",
+        "@prisma/adapter-pg",
+        "@google/generative-ai",
+        "@react-pdf/renderer",
+        "Svix",
+        "Stripe",
+        "Playwright",
+        "Husky",
       ],
-      githubUrl: "https://github.com/Lam-Thai/SubSave",
-      liveUrl: "https://sub-save-gules.vercel.app/",
+      githubUrl: "https://github.com/Lam-Thai/Landly",
+      liveUrl: "https://landly-rho.vercel.app/",
       features: [
-        "Smart dashboard with animated monthly spend, KPI cards, and upcoming billing timeline",
-        "Full subscription CRUD for name, category, monthly cost, billing day, trial end date, and monthly usage",
-        "Usage Value analytics with Recharts dual-view toggle (cost per use and cost vs usage)",
-        "Trial Trap Detector to flag trials ending soon before paid renewal",
-        "Sharing Optimizer to detect duplicate subscriptions and suggest consolidation",
-        "In-app Gemini assistant with authenticated server route, scoped responses, and graceful fallback behavior",
-        "Premium UI motion system with staggered reveals, hover lift, animated accents, and reduced-motion support",
-        "Production reliability features: x-request-id tracing, rate limiting, and /api/health with live dashboard polling",
+        "Paste a resume and a job post to get a version tailored to that role",
+        "AI-rewritten resume bullets that match the job description",
+        "Generated cover letter for the same job post",
+        "Export the tailored resume and cover letter to PDF",
+        "Freemium plan with a Pro upgrade for unlimited use via Stripe",
+        "Clerk sign-in with user sync through Svix webhooks",
+        "Playwright E2E coverage with Husky pre-push gating",
       ],
       challenges:
-        "Designing a finance-oriented dashboard that remains easy to use while combining real-time analytics, authenticated AI interactions, and resilient API behavior under provider or traffic constraints.",
+        "Getting AI to rewrite resume bullets so they match a specific job description while staying true to the user's real experience, then turning the result into clean, ready-to-send PDFs.",
       solution:
-        "Built a modular Next.js App Router architecture with Clerk-protected routes, Zod-validated handlers, Prisma-backed PostgreSQL models, and immediate client-side data refresh patterns; paired it with robust operational safeguards such as request IDs, endpoint rate limiting, and periodic health checks surfaced directly in the UI.",
+        "Paired the resume and job post in focused Gemini prompts for bullet rewrites and cover letters, rendered the output with @react-pdf/renderer through an authenticated API route, and gated usage with a freemium limit and a Stripe-backed Pro plan stored in Prisma and PostgreSQL.",
     },
   };
 
@@ -687,8 +698,7 @@ export default function ProjectDetail() {
             className={
               projectId === "insurflow" ||
               projectId === "tandem" ||
-              projectId === "landly" ||
-              projectId === "expense-tracker"
+              projectId === "landly"
                 ? "object-contain p-12"
                 : "object-cover"
             }
