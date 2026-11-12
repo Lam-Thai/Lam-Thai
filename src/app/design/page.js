@@ -69,7 +69,7 @@ export default function Design() {
 
                 <CardItem translateZ="30" className="mb-4">
                   <div className="text-sm text-zinc-400 mb-3">
-                    {entry.subtitle} —{" "}
+                    {entry.subtitle} |{" "}
                     <span className="text-zinc-300">{entry.date}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">

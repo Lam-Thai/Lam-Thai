@@ -557,7 +557,7 @@ export function createSignboard(title, subtitle) {
   const texture = makeTextTexture([
     { text: title, big: true },
     { text: subtitle, big: false },
-    { text: "— click to open —", big: false },
+    { text: "(click to open)", big: false },
   ]);
   const panelMat = new THREE.MeshStandardMaterial({
     map: texture,

@@ -24,10 +24,18 @@ Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
 ## Experience 🧠
 
 ### Full-stack Developer Intern @ Vero Ventures
-- Built multi-tenant InsurTech SaaS features using Next.js 14 and TypeScript
-- Developed AI-powered financial planning and advisory tools
-- Created advisor workflows, insurance visualizations, and PDF generation systems
-- Improved maintainability with refactoring and SonarCloud integration
+Jan 2026 – Aug 2026 | California, USA
+- Co-built a multi-tenant InsurTech SaaS platform using Next.js 14 + TypeScript, scaling to 500+ users and cutting delivery time by ~37% via modular architecture and Vercel CI/CD + Docker
+- Implemented AI-driven features using Google Gemini API for chat-based advisory, insurance needs calculations, and life expectancy estimation, cutting manual planning effort by ~46% for 500+ users
+- Developed financial planning tools and advisor workflows, including life event simulations, insurance breakdown UIs (React + Recharts), PDF generation, and estate flow diagrams, cutting documentation time by ~32%
+- Built secure backend and auth with PostgreSQL (Neon), Drizzle ORM, Clerk, Stripe; refactoring plus SonarCloud and CodeRabbit reviews cut production bugs by ~28%
+
+### Web Developer Intern @ FPT Software
+Jan 2025 – Sep 2025 | Remote
+- Developed and maintained internal enterprise web applications with ASP.NET + C#, serving 150+ internal users and cutting manual reporting time by ~40%
+- Built dynamic front-end interfaces with AngularJS, HTML5, and CSS, improving page load speed by ~25% and reducing UI defects by ~30%
+- Established a testing pipeline with Playwright E2E tests and Vitest unit tests gated by pre-push Husky hooks, alongside CodeQL static analysis, cutting escaped defects by ~35%
+- Practiced agentic engineering with Claude Code, structuring version-controlled sub-agents and skills files governed by an AGENTS.md rule file, cutting repetitive dev tasks by ~30%
 
 ### Graphic Design Volunteer @ Hongik University
 Feb 2023 – Jun 2023
