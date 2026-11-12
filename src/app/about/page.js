@@ -2,6 +2,7 @@
 
 import NavBar from "../components/Nav-Bar";
 import { AnimatedTestimonials } from "../components/ui/animated-testimonials";
+import { TECH_STACK } from "../../lib/tech-stack";
 
 export default function About() {
   const educationAndExperience = [
@@ -106,35 +107,7 @@ export default function About() {
             Tech Stack & Tools
           </p>
           <div className="flex flex-wrap gap-4 items-center justify-center">
-            {[
-              "JavaScript",
-              "TypeScript",
-              "HTML/CSS",
-              "React.js",
-              "Next.js",
-              "Node.js",
-              "Express.js",
-              "Bun.js",
-              "Hono",
-              "Vite",
-              "Passport.js",
-              "Prisma",
-              "Drizzle",
-              "MySQL",
-              "PostgreSQL",
-              "Neon",
-              "C#",
-              ".NET",
-              "PHP",
-              "Git",
-              "Copilot",
-              "Claude",
-              "ChatGPT",
-              "Cursor",
-              "Grok",
-              "WatsonX",
-              "Gemini",
-            ].map((tech) => (
+            {TECH_STACK.map((tech) => (
               <div
                 key={tech}
                 className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-300 text-sm font-medium hover:border-orange-500/50 hover:scale-[1.2] transition-all duration-300"

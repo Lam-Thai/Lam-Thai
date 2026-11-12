@@ -5,6 +5,7 @@ import Link from "next/link";
 import AnimatedStatValue from "./components/AnimatedStatValue";
 import { TextGenerateEffect } from "./components/ui/text-generate-effect";
 import { TypewriterCycle } from "./components/ui/typewriter-cycle";
+import { TECH_STACK } from "../lib/tech-stack";
 
 export default function Home() {
   return (
@@ -220,38 +221,7 @@ export default function Home() {
             Tech Stack
           </p>
           <div className="flex flex-wrap gap-6 items-center">
-            {[
-              "JavaScript",
-              "TypeScript",
-              "Python",
-              "MongoDB",
-              "Mongoose",
-              "HTML/CSS",
-              "React.js",
-              "Next.js",
-              "Node.js",
-              "Express.js",
-              "Bun.js",
-              "Hono",
-              "Vite",
-              "Passport.js",
-              "Prisma",
-              "Drizzle",
-              "MySQL",
-              "PostgreSQL",
-              "Neon",
-              "C#",
-              ".NET",
-              "PHP",
-              "Git",
-              "Copilot",
-              "Claude",
-              "ChatGPT",
-              "Cursor",
-              "Grok",
-              "WatsonX",
-              "Gemini",
-            ].map((tech) => (
+            {TECH_STACK.map((tech) => (
               <div
                 key={tech}
                 className="px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-lg text-zinc-300 text-sm font-medium hover:border-zinc-700 hover:scale-[1.2] transition-all duration-300"

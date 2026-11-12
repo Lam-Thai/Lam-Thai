@@ -5,19 +5,22 @@ Full-stack developer based in British Columbia with experience building scalable
 ## Tech Stack ⚙️
 
 ### Languages 🧾
-JavaScript 🟨 • TypeScript 🟦 • C# ⚙️ • PHP 🟪 • HTML/CSS 🎨
+TypeScript 🟦 • JavaScript 🟨 • Python 🐍 • SQL 🗃️ • C# ⚙️
+
+### AI & Agentic 🤖
+LLM Integration • Function Calling • LLM Evals • Agentic Engineering • Claude Code (Subagents, Skills) • Gemini API
 
 ### Frontend ✨
-React ⚛️ • Next.js ⚡ • Vue.js 🟢 • Nuxt.js 🌊 • TailwindCSS 🎨 • Vite ⚡
+React ⚛️ • Next.js ⚡ • TailwindCSS 🎨
 
 ### Backend 🧩
-Node.js 🟩 • Express.js 🚂 • Hono ⚡ • Prisma 🛠️ • Drizzle ORM 💧 • PostgreSQL 🐘 • MySQL 🐬
+Node.js 🟩 • Express.js 🚂 • FastAPI 🚀 • ASP.NET 🟣 • REST APIs 🔌 • Webhooks 🪝
 
-### Tools & Platforms 🛠️
-Git 🐙 • Vercel ⚡ • Clerk 🔐 • Stripe 💳 • Neon 🌐 • VS Code 🧭 • SonarCloud 🔎
+### Data & Integrations 🗄️
+PostgreSQL 🐘 • Prisma 🛠️ • Drizzle ORM 💧 • SQLAlchemy 🧪 • Stripe 💳 • Twilio 📞
 
-### AI Tools 🤖
-Gemini API • WatsonX • Grok • Claude • Cursor • Copilot
+### DevOps & Testing 🧪
+Docker 🐳 • GitHub Actions ⚙️ • CI/CD 🔁 • Vercel ⚡ • Playwright 🎭 • Vitest ⚡ • pytest 🐍 • TDD ✅
 
 ---
 
